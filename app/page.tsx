@@ -469,7 +469,7 @@ export default function HomePage() {
               {
                 tier: 'ELITE',
                 range: '₦200,000 – ₦990,000',
-                discount: '10%',
+                discount: '5%',
                 label: 'off every purchase',
                 desc: 'For those who move with intention. A single order between ₦200k and ₦990k earns you the Elite Member card.',
                 cardBg: 'linear-gradient(135deg, #1c1c1c 0%, #3a3a3a 60%, #1c1c1c 100%)',
@@ -479,7 +479,7 @@ export default function HomePage() {
               {
                 tier: 'GOLD',
                 range: '₦1,000,000+',
-                discount: '5%',
+                discount: '10%',
                 label: 'off every purchase',
                 desc: 'The pinnacle of the BIGBOLD experience. Spend over ₦1 million in a single order and join the Gold tier — for life.',
                 cardBg: 'linear-gradient(135deg, #2a2200 0%, #5a4800 50%, #2a2200 100%)',
