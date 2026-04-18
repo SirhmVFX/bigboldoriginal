@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useStore } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { PRODUCTS, formatPrice } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
 
@@ -17,14 +19,27 @@ const MOCK_ORDERS = [
 
 export default function ProfilePage() {
   const { state } = useStore();
+  const { user, logout, loading } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [editMode, setEditMode] = useState(false);
   const [profile, setProfile] = useState({
-    name: 'Adaeze Okonkwo',
-    email: 'adaeze@example.com',
+    name: '',
+    email: '',
     phone: '+234 801 234 5678',
     address: '14 Victoria Island, Lagos, Nigeria',
   });
+
+  useEffect(() => {
+    if (!loading && !user) router.push('/login');
+    if (user) setProfile(p => ({ ...p, name: user.displayName || '', email: user.email || '' }));
+  }, [user, loading, router]);
+
+  if (loading || !user) return (
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'var(--bb-muted)', letterSpacing: '0.1em' }}>Loading...</p>
+    </div>
+  );
 
   const favouriteProducts = PRODUCTS.filter(p => state.favorites.includes(p.id));
 
@@ -238,7 +253,9 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ marginTop: 32 }}>
-            <button style={{ background: 'none', border: '1px solid #ff4444', color: '#ff4444', padding: '12px 24px', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
+            <button
+              onClick={async () => { await logout(); router.push('/login'); }}
+              style={{ background: 'none', border: '1px solid #ff4444', color: '#ff4444', padding: '12px 24px', fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#ff4444'; e.currentTarget.style.color = '#fff'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#ff4444'; }}>
               Sign Out

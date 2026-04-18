@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { StoreProvider } from '@/lib/store';
 import { ThemeProvider } from '@/lib/theme';
+import { AuthProvider } from '@/lib/auth';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -32,13 +33,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <ThemeProvider>
-          <StoreProvider>
-            <Navbar />
-            <main style={{ flex: 1 }}>
-              {children}
-            </main>
-            <Footer />
-          </StoreProvider>
+          <AuthProvider>
+            <StoreProvider>
+              <Navbar />
+              <main style={{ flex: 1 }}>
+                {children}
+              </main>
+              <Footer />
+            </StoreProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

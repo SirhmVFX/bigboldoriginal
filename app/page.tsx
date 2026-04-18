@@ -432,6 +432,144 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── REWARDS ── */}
+      <section style={{ background: 'var(--bb-fg)', overflow: 'hidden', position: 'relative' }}>
+        {/* Subtle grid texture */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '48px 48px', pointerEvents: 'none' }} />
+
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px', position: 'relative', zIndex: 1 }}>
+          {/* Header */}
+          <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 64, flexWrap: 'wrap', gap: 20 }}>
+            <div>
+              <div style={{ display: 'inline-block', padding: '4px 12px', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.5)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 16 }}>
+                Member Rewards
+              </div>
+              <h2 style={{ fontSize: 'clamp(28px, 5vw, 60px)', fontWeight: 900, color: 'var(--bb-bg)', letterSpacing: '-0.03em', lineHeight: 0.95 }}>
+                SPEND MORE.<br />SAVE MORE.
+              </h2>
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, lineHeight: 1.7, maxWidth: 320 }}>
+              Every purchase moves you closer to a reward tier. Unlock exclusive discounts that apply automatically to every order after.
+            </p>
+          </div>
+
+          {/* Cards */}
+          <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'rgba(255,255,255,0.08)' }} className="rewards-grid">
+            {[
+              {
+                tier: 'BOLD',
+                range: '₦50,000 – ₦100,000',
+                discount: '2%',
+                label: 'off every purchase',
+                desc: 'Your first step into the BIGBOLD family. Spend between ₦50k and ₦100k in a single order and unlock the Bold Member card.',
+                cardBg: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                cardAccent: 'rgba(255,255,255,0.15)',
+                badge: 'ENTRY',
+              },
+              {
+                tier: 'ELITE',
+                range: '₦200,000 – ₦990,000',
+                discount: '10%',
+                label: 'off every purchase',
+                desc: 'For those who move with intention. A single order between ₦200k and ₦990k earns you the Elite Member card.',
+                cardBg: 'linear-gradient(135deg, #1c1c1c 0%, #3a3a3a 60%, #1c1c1c 100%)',
+                cardAccent: 'rgba(255,255,255,0.25)',
+                badge: 'POPULAR',
+              },
+              {
+                tier: 'GOLD',
+                range: '₦1,000,000+',
+                discount: '5%',
+                label: 'off every purchase',
+                desc: 'The pinnacle of the BIGBOLD experience. Spend over ₦1 million in a single order and join the Gold tier — for life.',
+                cardBg: 'linear-gradient(135deg, #2a2200 0%, #5a4800 50%, #2a2200 100%)',
+                cardAccent: 'rgba(255,215,0,0.3)',
+                badge: 'EXCLUSIVE',
+              },
+            ].map((card, i) => (
+              <div key={i} style={{ background: 'var(--bb-fg)', padding: '40px 36px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {/* Badge */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>{card.badge}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>{card.range}</span>
+                </div>
+
+                {/* Physical card mockup */}
+                <div style={{
+                  background: card.cardBg,
+                  border: `1px solid ${card.cardAccent}`,
+                  padding: '24px 20px',
+                  marginBottom: 32,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  aspectRatio: '1.586 / 1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}>
+                  {/* Shine */}
+                  <div style={{ position: 'absolute', top: -40, right: -40, width: 120, height: 120, background: card.cardAccent, borderRadius: '50%', filter: 'blur(40px)' }} />
+
+                  {/* Top row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                    <div>
+                      <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>BIGBOLD</p>
+                      <p style={{ fontSize: 13, fontWeight: 900, color: '#ffffff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{card.tier}</p>
+                    </div>
+                    {/* Chip */}
+                    <div style={{ width: 28, height: 20, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, padding: 3 }}>
+                      {[0,1,2,3].map(j => <div key={j} style={{ background: 'rgba(255,255,255,0.2)' }} />)}
+                    </div>
+                  </div>
+
+                  {/* Discount */}
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <p style={{ fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', lineHeight: 1 }}>{card.discount}</p>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>{card.label}</p>
+                  </div>
+
+                  {/* Bottom */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em' }}>•••• •••• •••• 2025</p>
+                    <p style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>MEMBER</p>
+                  </div>
+                </div>
+
+                {/* Tier name */}
+                <h3 style={{ fontSize: 22, fontWeight: 900, color: 'var(--bb-bg)', letterSpacing: '-0.01em', marginBottom: 12, textTransform: 'uppercase' }}>
+                  {card.tier} MEMBER
+                </h3>
+
+                {/* Description */}
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, lineHeight: 1.8, marginBottom: 24, flex: 1 }}>
+                  {card.desc}
+                </p>
+
+                {/* Spend threshold */}
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Spend</span>
+                  <span style={{ color: 'var(--bb-bg)', fontSize: 13, fontWeight: 800 }}>{card.range}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer note */}
+          <div data-animate="fadeUp" style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, lineHeight: 1.7, maxWidth: 480 }}>
+              Discounts are applied automatically on your next order once your tier is activated. Tiers are based on a single qualifying order, not cumulative spend.
+            </p>
+            <Link href="/products">
+              <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-fg)', border: 'none', padding: '14px 32px', fontWeight: 800, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+                Start Shopping →
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── INSTAGRAM GRID ── */}
       <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
         <div data-animate="fadeUp" style={{ textAlign: 'center', marginBottom: 40 }}>

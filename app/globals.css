@@ -591,6 +591,9 @@ body {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
+  /* Rewards grid — stack on mobile */
+  .rewards-grid { grid-template-columns: 1fr !important; }
+
   .btn-primary, .btn-outline, .btn-accent-outline {
     padding: 12px 24px;
     font-size: 12px;

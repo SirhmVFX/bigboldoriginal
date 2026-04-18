@@ -5,10 +5,12 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
+import { useAuth } from '@/lib/auth';
 
 export default function Navbar() {
   const { cartCount } = useStore();
   const { theme, toggle } = useTheme();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -84,13 +86,22 @@ export default function Navbar() {
               </svg>
             </Link>
 
-            <Link href="/profile" className="hidden-mobile" style={{ color: 'var(--bb-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-              </svg>
-            </Link>
+            {/* Profile / Auth */}
+            {user ? (
+              <Link href="/profile" className="hidden-mobile" style={{ color: 'var(--bb-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              </Link>
+            ) : (
+              <Link href="/login" className="hidden-mobile" style={{ color: 'var(--bb-muted)', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
+                Sign In
+              </Link>
+            )}
 
             <Link href="/cart" style={{ position: 'relative', color: 'var(--bb-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
@@ -138,7 +149,10 @@ export default function Navbar() {
               { label: 'Shop', href: '/products' },
               { label: 'About', href: '/about' },
               { label: 'Contact', href: '/contact' },
-              { label: 'Profile', href: '/profile' },
+              ...(user
+                ? [{ label: 'Profile', href: '/profile' }]
+                : [{ label: 'Sign In', href: '/login' }, { label: 'Create Account', href: '/signup' }]
+              ),
               { label: 'Cart', href: '/cart' },
             ].map(link => (
               <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
