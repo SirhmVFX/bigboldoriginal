@@ -80,7 +80,7 @@ export default function HomePage() {
           </div>
 
           {/* Floating badge */}
-          <div className="animate-float" style={{ position: 'absolute', right: '8%', top: '8%', transform: 'translateY(-50%)', width: 540, height: 540, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-float hero-badge" style={{ position: 'absolute', right: '8%', top: '8%', transform: 'translateY(-50%)', width: 540, height: 540,  alignItems: 'center', justifyContent: 'center' }}>
             <div className="animate-spin-slow" style={{ position: 'absolute', inset: -12 }}>
               <svg viewBox="0 0 120 120" style={{ width: '100%', height: '100%' }}>
                 <path id="circle" d="M 60,60 m -45,0 a 45,45 0 1,1 90,0 a 45,45 0 1,1 -90,0" fill="none"/>
@@ -101,7 +101,7 @@ export default function HomePage() {
 
       {/* ── TICKER ── */}
       <div style={{ background: 'var(--bb-accent)', padding: '14px 0', overflow: 'hidden' }}>
-        <div className="ticker-inner" style={{ color: 'var(--bb-accent-fg)', fontWeight: 800, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+        <div className="ticker-inner" style={{ color: 'var(--bb-accent-fg)', fontWeight: 800, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {Array(8).fill(null).map((_, i) => (
             <span key={i} style={{ marginRight: 48 }}>
               BIGBOLD ORIGINAL &nbsp;·&nbsp; CONFIDENCE SIMPLIFIED &nbsp;·&nbsp; MORE THAN A BRAND &nbsp;·&nbsp; A LIFESTYLE &nbsp;·&nbsp;
