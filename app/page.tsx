@@ -112,7 +112,7 @@ export default function HomePage() {
 
       {/* ── STATS ── */}
       <div ref={statsRef} style={{ background: 'var(--bb-bg-2)', borderBottom: '1px solid var(--bb-border)' }}>
-        <div data-stagger style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+        <div data-stagger className="stats-grid" style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {[
             { value: `${products}+`,           label: 'Products' },
             { value: `${customers.toLocaleString()}+`, label: 'Customers' },
@@ -176,10 +176,9 @@ export default function HomePage() {
 
       {/* ── EDITORIAL SPLIT ── */}
       <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--bb-border)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px' }}>
-
+        <div className="editorial-split" style={{ display: 'grid', gridTemplateColumns: '1fr 380px' }}>
           {/* Left — big photo + headline */}
-          <div data-animate="fadeIn" style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
+          <div className="editorial-photo" data-animate="fadeIn" style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
             <Image
               src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1200&q=85"
               alt="Wear the lifestyle"
@@ -234,7 +233,7 @@ export default function HomePage() {
           </div>
 
           {/* Right — product stack */}
-          <div data-animate="slideLeft" style={{ background: 'var(--bb-bg-2)', borderLeft: '1px solid var(--bb-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="editorial-sidebar" data-animate="slideLeft" style={{ background: 'var(--bb-bg-2)', borderLeft: '1px solid var(--bb-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {PRODUCTS.slice(0, 4).map((product, i) => (
               <Link key={product.id} href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
                 <div
@@ -325,7 +324,7 @@ export default function HomePage() {
 
       {/* ── PROMO BANNERS ── */}
       <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--bb-border)' }}>
+        <div className="promo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--bb-border)' }}>
           <div data-animate="slideRight" style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#111' }}>
             <Image src="https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80" alt="New Arrivals" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 32 }}>
@@ -346,7 +345,7 @@ export default function HomePage() {
         </div>
 
         {/* Full-width promo */}
-        <div data-animate="fadeUp" style={{ marginTop: 1, position: 'relative', height: 200, overflow: 'hidden', background: 'var(--bb-bg-2)', border: '1px solid var(--bb-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px' }}>
+        <div className="promo-fullwidth" data-animate="fadeUp" style={{ marginTop: 1, position: 'relative', height: 200, overflow: 'hidden', background: 'var(--bb-bg-2)', border: '1px solid var(--bb-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px' }}>
           <div>
             <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Free Shipping</p>
             <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: 'var(--bb-fg)' }}>
@@ -383,7 +382,8 @@ export default function HomePage() {
 
       {/* ── ABOUT STRIP ── */}
       <section style={{ background: 'var(--bb-bg-2)', borderTop: '1px solid var(--bb-border)', borderBottom: '1px solid var(--bb-border)' }}>
-        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px' }}>
+          <div className="about-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
           <div data-animate="slideRight">
             <div className="tag" style={{ marginBottom: 20 }}>Our Story</div>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', lineHeight: 1, marginBottom: 24 }}>
@@ -399,6 +399,7 @@ export default function HomePage() {
               <Image src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=800&q=80" alt="BIGBOLD Story" fill style={{ objectFit: 'cover' }} />
             </div>
             <div style={{ position: 'absolute', bottom: -12, right: -12, width: 80, height: 80, border: '3px solid var(--bb-accent)', zIndex: 2 }} />
+          </div>
           </div>
         </div>
       </section>
@@ -437,7 +438,7 @@ export default function HomePage() {
           <div className="tag" style={{ marginBottom: 12 }}>@bigboldoriginal_</div>
           <h2 style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>FOLLOW THE MOVEMENT</h2>
         </div>
-        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2 }}>
+        <div data-stagger className="insta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2 }}>
           {[
             'https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=400&q=80',
             'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=400&q=80',

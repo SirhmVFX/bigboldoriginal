@@ -25,7 +25,7 @@ export default function AboutPage() {
 
       {/* ── MISSION ── */}
       <section style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
+        <div className="mission-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
           <div data-animate="slideRight">
             <div className="tag" style={{ marginBottom: 20 }}>The Beginning</div>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', lineHeight: 1, marginBottom: 24 }}>
@@ -117,7 +117,7 @@ export default function AboutPage() {
           <div className="tag" style={{ marginBottom: 12 }}>The Process</div>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>HOW WE BUILD</h2>
         </div>
-        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 0, background: 'var(--bb-border)' }}>
+        <div data-stagger className="process-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, background: 'var(--bb-border)' }}>
           {[
             { step: '01', title: 'Concept', desc: 'Every piece starts as an idea — a feeling, a word, a sketch on paper.' },
             { step: '02', title: 'Design',  desc: 'We refine until it\'s perfect. No shortcuts, no compromises.' },
@@ -136,7 +136,7 @@ export default function AboutPage() {
 
       {/* ── GALLERY ── */}
       <section data-animate="fadeIn" style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 2, height: 500 }}>
+        <div className="about-gallery" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 2, height: 500 }}>
           {[
             'https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=800&q=80',
             'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&q=80',

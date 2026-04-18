@@ -33,7 +33,7 @@ export default function ProfilePage() {
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 48, paddingBottom: 40, borderBottom: '1px solid #1a1a1a' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 48, paddingBottom: 40, borderBottom: '1px solid var(--bb-border)', flexWrap: 'wrap' }} className="profile-header">
         <div style={{ position: 'relative', width: 80, height: 80, overflow: 'hidden', background: 'var(--bb-border)', flexShrink: 0 }}>
           <Image
             src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=200&q=80"
@@ -49,7 +49,7 @@ export default function ProfilePage() {
           </h1>
           <p style={{ color: '#555', fontSize: 14 }}>{profile.email}</p>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }} className="profile-stats">
           <div style={{ textAlign: 'center', padding: '16px 24px', border: '1px solid #1a1a1a' }}>
             <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--bb-accent)' }}>{MOCK_ORDERS.length}</div>
             <div style={{ color: '#555', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Orders</div>
@@ -62,7 +62,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #1a1a1a', marginBottom: 40 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--bb-border)', marginBottom: 40, overflowX: 'auto' }} className="profile-tabs">
         {(['overview', 'orders', 'favourites', 'settings'] as Tab[]).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{

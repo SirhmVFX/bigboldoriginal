@@ -34,7 +34,7 @@ export default function ContactPage() {
       </section>
 
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '64px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
+        <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
           {/* Contact form */}
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--bb-fg)', letterSpacing: '-0.01em', marginBottom: 8 }}>Send a Message</h2>

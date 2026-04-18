@@ -53,7 +53,7 @@ export default function CartPage() {
         <p style={{ color: '#555', fontSize: 14, marginTop: 8 }}>{state.cart.reduce((s, i) => s + i.quantity, 0)} items</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 40, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 40, alignItems: 'start' }} className="cart-grid">
         {/* Cart items */}
         <div>
           {/* Header */}
@@ -123,7 +123,7 @@ export default function CartPage() {
         </div>
 
         {/* Order summary */}
-        <div style={{ background: 'var(--bb-bg-2)', border: '1px solid #1a1a1a', padding: 32, position: 'sticky', top: 80 }}>
+        <div style={{ background: 'var(--bb-bg-2)', border: '1px solid var(--bb-border)', padding: 32, position: 'sticky', top: 80 }} className="cart-summary">
           <h2 style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--bb-fg)', marginBottom: 24 }}>
             Order Summary
           </h2>

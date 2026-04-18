@@ -1,38 +1,44 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { useTheme } from '@/lib/theme';
 
 export default function Footer() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <footer style={{ background: 'var(--bb-bg-2)', borderTop: '1px solid var(--bb-border)', marginTop: 'auto', transition: 'background 0.3s' }}>
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '64px 24px 40px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 48 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 48 }}>
 
           {/* Brand */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <div style={{ width: 40, height: 40, background: 'var(--bb-invert)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 18, color: 'var(--bb-invert-fg)', transition: 'background 0.3s, color 0.3s' }}>
-                B
-              </div>
-              <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '0.12em', color: 'var(--bb-fg)', textTransform: 'uppercase', transition: 'color 0.3s' }}>BIGBOLD</span>
+            <div style={{ marginBottom: 20 }}>
+              <Image
+                src={isDark ? '/images/logo white.png' : '/images/logo black.png'}
+                alt="BIGBOLD ORIGINAL"
+                width={140}
+                height={40}
+                style={{ objectFit: 'contain', height: 40, width: 'auto' }}
+              />
             </div>
             <p style={{ color: 'var(--bb-muted)', fontSize: 13, lineHeight: 1.8, maxWidth: 220 }}>
               EST. 2023<br />
               Confidence, Simplified.<br />
-              More than a brand. A Lifestyle.<br />
-              Where sophistication meets unapologetic simplicity.
+              More than a brand. A Lifestyle.
             </p>
-            <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
               {['IG', 'TW', 'TK'].map(s => (
                 <a key={s} href="#" style={{
                   width: 36, height: 36, border: '1px solid var(--bb-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--bb-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em',
+                  color: 'var(--bb-muted)', fontSize: 11, fontWeight: 700,
                   textDecoration: 'none', transition: 'all 0.2s',
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bb-accent)'; e.currentTarget.style.color = 'var(--bb-accent)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bb-border)'; e.currentTarget.style.color = 'var(--bb-muted)'; }}
-                >
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bb-fg)'; e.currentTarget.style.color = 'var(--bb-fg)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bb-border)'; e.currentTarget.style.color = 'var(--bb-muted)'; }}>
                   {s}
                 </a>
               ))}
@@ -46,8 +52,7 @@ export default function Footer() {
               {['All Products', 'Tops', 'Bottoms', 'Outerwear', 'Accessories', 'New Arrivals', 'Best Sellers'].map(item => (
                 <Link key={item} href="/products" style={{ color: 'var(--bb-muted)', fontSize: 13, textDecoration: 'none', transition: 'color 0.2s' }}
                   onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}
-                >
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
                   {item}
                 </Link>
               ))}
@@ -67,8 +72,7 @@ export default function Footer() {
               ].map(item => (
                 <Link key={item.label} href={item.href} style={{ color: 'var(--bb-muted)', fontSize: 13, textDecoration: 'none', transition: 'color 0.2s' }}
                   onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}
-                >
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
                   {item.label}
                 </Link>
               ))}
@@ -95,12 +99,11 @@ export default function Footer() {
           <p style={{ color: 'var(--bb-subtle)', fontSize: 12, letterSpacing: '0.05em' }}>
             © 2024 BIGBOLD ORIGINAL. ALL RIGHTS RESERVED.
           </p>
-          <div style={{ display: 'flex', gap: 24 }}>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
             {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(item => (
               <a key={item} href="#" style={{ color: 'var(--bb-subtle)', fontSize: 12, textDecoration: 'none', letterSpacing: '0.05em', transition: 'color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-accent)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-subtle)')}
-              >
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-subtle)')}>
                 {item}
               </a>
             ))}
