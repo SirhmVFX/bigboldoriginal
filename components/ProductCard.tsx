@@ -118,7 +118,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 title={c}
                 style={{
                   width: 14, height: 14,
-                  background: c === 'Black' ? '#0a0a0a' : c === 'White' ? '#f5f5f0' : c === 'Cream' ? '#e8e4d9' : c === 'Olive' ? '#4a5240' : c === 'Charcoal' ? '#2a2a2a' : '#888',
+                  background: c === 'Black' ? '#0a0a0a' : c === 'White' ? '#ffffff' : c === 'Cream' ? '#e8e4d9' : c === 'Olive' ? '#4a5240' : c === 'Charcoal' ? '#2a2a2a' : '#888',
                   border: '1px solid var(--bb-border)',
                 }}
               />

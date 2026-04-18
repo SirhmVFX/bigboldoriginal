@@ -20,7 +20,7 @@ export default function Navbar() {
   }, []);
 
   const navBg = scrolled
-    ? `${isDark ? 'rgba(10,10,10,0.97)' : 'rgba(245,245,240,0.97)'}`
+    ? `${isDark ? 'rgba(10,10,10,0.97)' : 'rgba(255,255,255,0.97)'}`
     : 'var(--bb-bg)';
 
   return (

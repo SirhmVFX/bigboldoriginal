@@ -127,7 +127,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <button key={c} onClick={() => setSelectedColor(c)}
                     style={{
                       width: 32, height: 32,
-                      background: c === 'Black' ? 'var(--bb-bg)' : c === 'White' ? 'var(--bb-fg)' : c === 'Cream' ? '#e8e4d9' : c === 'Olive' ? '#4a5240' : c === 'Charcoal' ? 'var(--bb-border-2)' : '#888',
+                      background: c === 'Black' ? 'var(--bb-bg)' : c === 'White' ? '#ffffff' : c === 'Cream' ? '#e8e4d9' : c === 'Olive' ? '#4a5240' : c === 'Charcoal' ? 'var(--bb-border-2)' : '#888',
                       border: `2px solid ${selectedColor === c ? 'var(--bb-accent)' : 'var(--bb-border-2)'}`,
                       cursor: 'pointer',
                       transition: 'border-color 0.2s',

@@ -6,7 +6,7 @@ export default function NotFound() {
       <div style={{ fontSize: 'clamp(80px, 15vw, 160px)', fontWeight: 900, color: '#1a1a1a', letterSpacing: '-0.05em', lineHeight: 1 }}>
         404
       </div>
-      <h1 style={{ fontSize: 'clamp(20px, 3vw, 32px)', fontWeight: 900, color: '#f5f5f0', letterSpacing: '-0.02em', marginBottom: 16 }}>
+      <h1 style={{ fontSize: 'clamp(20px, 3vw, 32px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: 16 }}>
         PAGE NOT FOUND
       </h1>
       <p style={{ color: '#555', fontSize: 15, marginBottom: 40, maxWidth: 400 }}>

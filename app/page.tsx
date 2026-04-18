@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import ProductCard from '@/components/ProductCard';
-import { PRODUCTS, formatPrice } from '@/lib/products';
+import { PRODUCTS } from '@/lib/products';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
 function useCountUp(target: number, active: boolean, duration = 1800) {
@@ -80,7 +80,7 @@ export default function HomePage() {
           </div>
 
           {/* Floating badge */}
-          <div className="animate-float" style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', width: 140, height: 140, border: '1px solid var(--bb-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-float" style={{ position: 'absolute', right: '8%', top: '8%', transform: 'translateY(-50%)', width: 540, height: 540, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="animate-spin-slow" style={{ position: 'absolute', inset: -12 }}>
               <svg viewBox="0 0 120 120" style={{ width: '100%', height: '100%' }}>
                 <path id="circle" d="M 60,60 m -45,0 a 45,45 0 1,1 90,0 a 45,45 0 1,1 -90,0" fill="none"/>
@@ -174,6 +174,137 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── EDITORIAL SPLIT ── */}
+      <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--bb-border)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px' }}>
+
+          {/* Left — big photo + headline */}
+          <div data-animate="fadeIn" style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
+            <Image
+              src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1200&q=85"
+              alt="Wear the lifestyle"
+              fill
+              style={{ objectFit: 'cover', objectPosition: 'center top' }}
+            />
+            {/* dark gradient overlay */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.18) 55%, transparent 100%)' }} />
+
+            {/* Text overlay */}
+            <div data-animate="fadeUp" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 48px' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 14 }}>
+                DRESS THE UNCONVENTIONAL
+              </p>
+              <h2 style={{
+                fontSize: 'clamp(48px, 7vw, 88px)',
+                fontWeight: 900,
+                color: '#ffffff',
+                letterSpacing: '-0.03em',
+                lineHeight: 0.9,
+                textTransform: 'uppercase',
+              }}>
+                WEAR THE<br />
+                <span style={{ fontStyle: 'italic', fontWeight: 400 }}>LIFESTYLE</span>
+              </h2>
+            </div>
+
+            {/* Shop Now bar pinned to bottom-right */}
+            <Link href="/products" style={{ textDecoration: 'none' }}>
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                background: 'var(--bb-fg)',
+                color: 'var(--bb-bg)',
+                padding: '20px 36px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bb-accent)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--bb-fg)')}
+              >
+                <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'inherit' }}>SHOP NOW</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </Link>
+          </div>
+
+          {/* Right — product stack */}
+          <div data-animate="slideLeft" style={{ background: 'var(--bb-bg-2)', borderLeft: '1px solid var(--bb-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {PRODUCTS.slice(0, 4).map((product, i) => (
+              <Link key={product.id} href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 20,
+                    padding: '20px 24px',
+                    borderBottom: '1px solid var(--bb-border)',
+                    background: 'var(--bb-bg-2)',
+                    transition: 'background 0.2s',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bb-bg-3)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bb-bg-2)')}
+                >
+                  {/* Product image */}
+                  <div style={{ position: 'relative', width: 90, height: 110, flexShrink: 0, overflow: 'hidden', background: 'var(--bb-bg-3)' }}>
+                    <Image src={product.images[0]} alt={product.name} fill style={{ objectFit: 'cover' }} sizes="90px" />
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: 'var(--bb-muted)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>{product.category}</p>
+                    <p style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</p>
+                    <p style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 900 }}>
+                      ₦{product.price.toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* Arrow */}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bb-muted)" strokeWidth="2" style={{ flexShrink: 0 }}>
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </Link>
+            ))}
+
+            {/* View all */}
+            <Link href="/products" style={{ textDecoration: 'none', marginTop: 'auto' }}>
+              <div style={{
+                padding: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'var(--bb-fg)',
+                color: 'var(--bb-bg)',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              >
+                <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>View All Products</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile responsive override */}
+        <style>{`
+          @media (max-width: 768px) {
+            .editorial-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+      </section>
+
       {/* ── FEATURED PRODUCTS ── */}
       <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto' }}>
         <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
@@ -183,7 +314,7 @@ export default function HomePage() {
           </div>
           <Link href="/products" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">View All</button></Link>
         </div>
-        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
+        <div data-stagger className="product-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'var(--bb-border)' }}>
           {featured.map((p, i) => (
             <div key={p.id} style={{ background: 'var(--bb-bg)' }}>
               <ProductCard product={p} index={i} />
@@ -199,7 +330,7 @@ export default function HomePage() {
             <Image src="https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80" alt="New Arrivals" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 32 }}>
               <div className="tag" style={{ marginBottom: 12, width: 'fit-content' }}>New Drop</div>
-              <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: '#f5f5f0', letterSpacing: '-0.02em', marginBottom: 16 }}>NEW ARRIVALS<br />ARE HERE</h3>
+              <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: 16 }}>NEW ARRIVALS<br />ARE HERE</h3>
               <Link href="/products?filter=new"><button className="btn-primary">Shop New</button></Link>
             </div>
           </div>
@@ -241,7 +372,7 @@ export default function HomePage() {
           </div>
           <Link href="/products?filter=new" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">See All New</button></Link>
         </div>
-        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
+        <div data-stagger className="product-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'var(--bb-border)' }}>
           {newArrivals.map((p, i) => (
             <div key={p.id} style={{ background: 'var(--bb-bg)' }}>
               <ProductCard product={p} index={i} />
