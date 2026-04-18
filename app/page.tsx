@@ -1,65 +1,341 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Link from 'next/link';
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
+import ProductCard from '@/components/ProductCard';
+import { PRODUCTS, formatPrice } from '@/lib/products';
+import { useScrollReveal } from '@/lib/useScrollReveal';
+
+function useCountUp(target: number, active: boolean, duration = 1800) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    let step = 0;
+    const steps = 60;
+    const t = setInterval(() => {
+      step++;
+      setVal(Math.round(target * (step / steps)));
+      if (step >= steps) clearInterval(t);
+    }, duration / steps);
+    return () => clearInterval(t);
+  }, [active, target, duration]);
+  return val;
+}
+
+const HERO_WORDS = ['CONFIDENCE', 'SIMPLICITY', 'LIFESTYLE', 'BOLDNESS'];
+
+export default function HomePage() {
+  useScrollReveal();
+
+  const [wordIdx, setWordIdx] = useState(0);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const [statsVisible, setStatsVisible] = useState(false);
+
+  const products  = useCountUp(50,   statsVisible);
+  const customers = useCountUp(2300, statsVisible);
+
+  useEffect(() => {
+    const t = setInterval(() => setWordIdx(i => (i + 1) % HERO_WORDS.length), 2200);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStatsVisible(true); }, { threshold: 0.2 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const featured    = PRODUCTS.filter(p => p.isBestSeller).slice(0, 4);
+  const newArrivals = PRODUCTS.filter(p => p.isNew).slice(0, 4);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div>
+      {/* ── HERO ── */}
+      <section className="grid-bg noise" style={{ position: 'relative', minHeight: '95vh', display: 'flex', alignItems: 'center', overflow: 'hidden', background: 'var(--bb-bg)' }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+          <Image src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=1600&q=80" alt="BIGBOLD Hero" fill style={{ objectFit: 'cover', opacity: 0.18 }} priority />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--bb-accent)', zIndex: 2 }} />
+
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 1400, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
+          <div style={{ maxWidth: 800 }}>
+            <div className="tag animate-fadeIn" style={{ marginBottom: 28 }}>EST. 2023 — NIGERIA</div>
+            <h1 style={{ fontSize: 'clamp(52px, 10vw, 120px)', fontWeight: 900, lineHeight: 0.92, letterSpacing: '-0.03em', marginBottom: 32 }}>
+              <span className="animate-slideRight"        style={{ display: 'block', color: 'var(--bb-fg)',     opacity: 0 }}>BIG</span>
+              <span className="animate-slideRight delay-200" style={{ display: 'block', color: 'var(--bb-accent)', opacity: 0 }}>BOLD</span>
+              <span className="animate-slideRight delay-400" style={{ display: 'block', color: 'var(--bb-fg)', opacity: 0, fontSize: 'clamp(18px, 3vw, 36px)', fontWeight: 400, letterSpacing: '0.15em', marginTop: 16 }}>
+                {HERO_WORDS[wordIdx]}
+              </span>
+            </h1>
+            <p className="animate-fadeUp delay-500" style={{ color: 'var(--bb-muted)', fontSize: 'clamp(14px, 2vw, 18px)', lineHeight: 1.7, maxWidth: 480, marginBottom: 40, opacity: 0 }}>
+              Where sophistication meets unapologetic simplicity. More than a brand — a lifestyle built for those who move with quiet confidence.
+            </p>
+            <div className="animate-fadeUp delay-600" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', opacity: 0 }}>
+              <Link href="/products"><button className="btn-primary">Shop Now</button></Link>
+              <Link href="/about"><button className="btn-outline">Our Story</button></Link>
+            </div>
+          </div>
+
+          {/* Floating badge */}
+          <div className="animate-float" style={{ position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', width: 140, height: 140, border: '1px solid var(--bb-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="animate-spin-slow" style={{ position: 'absolute', inset: -12 }}>
+              <svg viewBox="0 0 120 120" style={{ width: '100%', height: '100%' }}>
+                <path id="circle" d="M 60,60 m -45,0 a 45,45 0 1,1 90,0 a 45,45 0 1,1 -90,0" fill="none"/>
+                <text fontSize="10" fill="var(--bb-accent)" letterSpacing="3" fontWeight="600">
+                  <textPath href="#circle">BIGBOLD ORIGINAL · EST 2023 · </textPath>
+                </text>
+              </svg>
+            </div>
+            <span style={{ fontSize: 28, fontWeight: 900, color: 'var(--bb-accent)' }}>B</span>
+          </div>
         </div>
-      </main>
+
+        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'var(--bb-subtle)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Scroll</span>
+          <div style={{ width: 1, height: 40, background: 'linear-gradient(to bottom, var(--bb-accent), transparent)' }} />
+        </div>
+      </section>
+
+      {/* ── TICKER ── */}
+      <div style={{ background: 'var(--bb-accent)', padding: '14px 0', overflow: 'hidden' }}>
+        <div className="ticker-inner" style={{ color: 'var(--bb-accent-fg)', fontWeight: 800, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          {Array(8).fill(null).map((_, i) => (
+            <span key={i} style={{ marginRight: 48 }}>
+              BIGBOLD ORIGINAL &nbsp;·&nbsp; CONFIDENCE SIMPLIFIED &nbsp;·&nbsp; MORE THAN A BRAND &nbsp;·&nbsp; A LIFESTYLE &nbsp;·&nbsp;
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── STATS ── */}
+      <div ref={statsRef} style={{ background: 'var(--bb-bg-2)', borderBottom: '1px solid var(--bb-border)' }}>
+        <div data-stagger style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+          {[
+            { value: `${products}+`,           label: 'Products' },
+            { value: `${customers.toLocaleString()}+`, label: 'Customers' },
+            { value: statsVisible ? '1+' : '0+', label: 'Year Strong' },
+            { value: '100%',                   label: 'Made in Nigeria' },
+          ].map((stat, i) => (
+            <div key={i} style={{ textAlign: 'center', padding: '24px', borderRight: i < 3 ? '1px solid var(--bb-border)' : 'none' }}>
+              <div style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, color: 'var(--bb-fg)', letterSpacing: '-0.02em' }}>{stat.value}</div>
+              <div style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 6 }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── WHY BIGBOLD ── */}
+      <section style={{ borderBottom: '1px solid var(--bb-border)' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '64px 24px 0' }}>
+          <div data-animate="fadeUp" style={{ marginBottom: 48 }}>
+            <p style={{ fontSize: 'clamp(22px, 4vw, 36px)', fontWeight: 900, color: 'var(--bb-fg)', letterSpacing: '-0.02em' }}>
+              why <span style={{ fontStyle: 'italic', fontWeight: 400 }}>BIGBOLD?</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="why-grid" style={{ maxWidth: 1400, margin: '0 auto', borderTop: '1px solid var(--bb-border)' }}>
+          {[
+            {
+              num: '01',
+              desc: 'Get your order delivered quickly, straight to your door.',
+              title: 'FAST SHIPPING',
+              sub: '3–5 Business Days',
+            },
+            {
+              num: '02',
+              desc: 'Return your items hassle-free. Our flexible policy makes it simple.',
+              title: 'EASY RETURNS',
+              sub: '14 Days From Delivery',
+            },
+            {
+              num: '03',
+              desc: 'Pay for your order with confidence. Your details are always protected.',
+              title: 'SECURE PAYMENTS',
+              sub: 'Bank-Grade SSL Protection',
+            },
+            {
+              num: '04',
+              desc: 'Get the help you need, fast. Our dedicated team is here for you.',
+              title: 'CUSTOMER SUPPORT',
+              sub: 'hello@bigboldoriginal.com',
+            },
+          ].map((item, i) => (
+            <div key={i} className="why-item">
+              <span className="why-num">{item.num}</span>
+              <p className="why-desc">{item.desc}</p>
+              <p className="why-title">{item.title}</p>
+              <p className="why-sub">{item.sub}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FEATURED PRODUCTS ── */}
+      <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto' }}>
+        <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+          <div>
+            <div className="tag" style={{ marginBottom: 12 }}>Best Sellers</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>THE ESSENTIALS</h2>
+          </div>
+          <Link href="/products" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">View All</button></Link>
+        </div>
+        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
+          {featured.map((p, i) => (
+            <div key={p.id} style={{ background: 'var(--bb-bg)' }}>
+              <ProductCard product={p} index={i} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── PROMO BANNERS ── */}
+      <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--bb-border)' }}>
+          <div data-animate="slideRight" style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#111' }}>
+            <Image src="https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80" alt="New Arrivals" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 32 }}>
+              <div className="tag" style={{ marginBottom: 12, width: 'fit-content' }}>New Drop</div>
+              <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: '#f5f5f0', letterSpacing: '-0.02em', marginBottom: 16 }}>NEW ARRIVALS<br />ARE HERE</h3>
+              <Link href="/products?filter=new"><button className="btn-primary">Shop New</button></Link>
+            </div>
+          </div>
+          <div data-animate="slideLeft" style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: 'var(--bb-accent)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 40 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--bb-accent-fg)', marginBottom: 12 }}>Limited Time</p>
+            <h3 style={{ fontSize: 'clamp(24px, 3.5vw, 48px)', fontWeight: 900, color: 'var(--bb-accent-fg)', letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: 20 }}>
+              UP TO<br />20% OFF<br />SELECTED
+            </h3>
+            <Link href="/products?filter=sale">
+              <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-accent)', border: 'none', padding: '14px 32px', fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Shop Sale</button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Full-width promo */}
+        <div data-animate="fadeUp" style={{ marginTop: 1, position: 'relative', height: 200, overflow: 'hidden', background: 'var(--bb-bg-2)', border: '1px solid var(--bb-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px' }}>
+          <div>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Free Shipping</p>
+            <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: 'var(--bb-fg)' }}>
+              ORDERS OVER <span style={{ color: 'var(--bb-accent)' }}>₦50,000</span>
+            </h3>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Use Code</p>
+            <div style={{ border: '1px solid var(--bb-accent)', padding: '12px 24px', display: 'inline-block' }}>
+              <span style={{ color: 'var(--bb-accent)', fontSize: 24, fontWeight: 900, letterSpacing: '0.1em' }}>BOLD10</span>
+            </div>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 11, marginTop: 8 }}>10% off your first order</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── NEW ARRIVALS ── */}
+      <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+          <div>
+            <div className="tag" style={{ marginBottom: 12 }}>Just Dropped</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>NEW ARRIVALS</h2>
+          </div>
+          <Link href="/products?filter=new" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">See All New</button></Link>
+        </div>
+        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
+          {newArrivals.map((p, i) => (
+            <div key={p.id} style={{ background: 'var(--bb-bg)' }}>
+              <ProductCard product={p} index={i} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── ABOUT STRIP ── */}
+      <section style={{ background: 'var(--bb-bg-2)', borderTop: '1px solid var(--bb-border)', borderBottom: '1px solid var(--bb-border)' }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+          <div data-animate="slideRight">
+            <div className="tag" style={{ marginBottom: 20 }}>Our Story</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', lineHeight: 1, marginBottom: 24 }}>
+              IN A WORLD FULL<br />OF NOISE, WE CHOOSE<br /><span style={{ color: 'var(--bb-accent)' }}>QUIET CONFIDENCE.</span>
+            </h2>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 15, lineHeight: 1.8, marginBottom: 32 }}>
+              BIGBOLD was born in 2023 from a simple belief: that true style doesn't shout. It whispers. We create pieces for those who understand that confidence is the quietest — and loudest — statement you can make.
+            </p>
+            <Link href="/about"><button className="btn-outline">Read Our Story</button></Link>
+          </div>
+          <div data-animate="slideLeft" style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
+              <Image src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=800&q=80" alt="BIGBOLD Story" fill style={{ objectFit: 'cover' }} />
+            </div>
+            <div style={{ position: 'absolute', bottom: -12, right: -12, width: 80, height: 80, border: '3px solid var(--bb-accent)', zIndex: 2 }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto' }}>
+        <div data-animate="fadeUp" style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div className="tag" style={{ marginBottom: 12 }}>Reviews</div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>WHAT THEY SAY</h2>
+        </div>
+        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
+          {[
+            { name: 'Adaeze O.', location: 'Lagos',         text: 'BIGBOLD is not just clothing, it\'s a whole vibe. The quality is unmatched and the fit is perfect every time.', rating: 5 },
+            { name: 'Emeka T.',  location: 'Abuja',         text: 'I\'ve been wearing BIGBOLD since day one. The Quiet Confidence Hoodie is my most-worn piece. Worth every naira.', rating: 5 },
+            { name: 'Chisom A.', location: 'Port Harcourt', text: 'Finally a Nigerian brand that gets it. The attention to detail, the quality, the aesthetic — all 10/10.', rating: 5 },
+          ].map((review, i) => (
+            <div key={i} style={{ background: 'var(--bb-bg-2)', padding: 32 }}>
+              <div style={{ display: 'flex', gap: 3, marginBottom: 16 }}>
+                {[1,2,3,4,5].map(s => (
+                  <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill={s <= review.rating ? 'var(--bb-fg)' : 'var(--bb-border-2)'}>
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                ))}
+              </div>
+              <p style={{ color: 'var(--bb-muted)', fontSize: 14, lineHeight: 1.8, marginBottom: 20, fontStyle: 'italic' }}>&ldquo;{review.text}&rdquo;</p>
+              <p style={{ color: 'var(--bb-fg)', fontSize: 13, fontWeight: 700 }}>{review.name}</p>
+              <p style={{ color: 'var(--bb-subtle)', fontSize: 12 }}>{review.location}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── INSTAGRAM GRID ── */}
+      <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
+        <div data-animate="fadeUp" style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div className="tag" style={{ marginBottom: 12 }}>@bigboldoriginal_</div>
+          <h2 style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>FOLLOW THE MOVEMENT</h2>
+        </div>
+        <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2 }}>
+          {[
+            'https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=400&q=80',
+            'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=400&q=80',
+            'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80',
+            'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&q=80',
+            'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&q=80',
+            'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&q=80',
+          ].map((src, i) => (
+            <div key={i} className="img-zoom" style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'var(--bb-border)' }}>
+              <Image src={src} alt={`Instagram ${i + 1}`} fill style={{ objectFit: 'cover' }} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── CTA STRIP ── */}
+      <section data-animate="scaleUp" style={{ background: 'var(--bb-accent)', padding: '64px 24px', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--bb-accent-fg)', marginBottom: 12 }}>Ready to be bold?</p>
+        <h2 style={{ fontSize: 'clamp(32px, 6vw, 72px)', fontWeight: 900, color: 'var(--bb-accent-fg)', letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: 32 }}>
+          SHOP THE<br />COLLECTION
+        </h2>
+        <Link href="/products">
+          <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-accent)', border: 'none', padding: '16px 48px', fontWeight: 800, fontSize: 14, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'transform 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-3px)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}>
+            Shop Now →
+          </button>
+        </Link>
+      </section>
     </div>
   );
 }
