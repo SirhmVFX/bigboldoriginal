@@ -2,11 +2,40 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 import { useTheme } from '@/lib/theme';
+import { newsletterApi } from '@/lib/firestore';
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 export default function Footer() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (!isValidEmail(email)) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
+    setStatus('loading');
+    try {
+      await newsletterApi.subscribe(email, 'footer');
+      setStatus('success');
+      setEmail('');
+    } catch {
+      setStatus('error');
+      setErrorMsg('Something went wrong. Please try again.');
+    }
+  };
 
   return (
     <footer style={{ background: 'var(--bb-bg-2)', borderTop: '1px solid var(--bb-border)', marginTop: 'auto', transition: 'background 0.3s' }}>
@@ -85,10 +114,36 @@ export default function Footer() {
             <p style={{ color: 'var(--bb-muted)', fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
               Get early access to drops, exclusive offers, and behind-the-scenes content.
             </p>
-            <div style={{ display: 'flex' }}>
-              <input type="email" placeholder="your@email.com" className="bb-input" style={{ flex: 1, fontSize: 13 }} />
-              <button className="btn-primary" style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}>→</button>
-            </div>
+            {status === 'success' ? (
+              <div style={{ padding: '12px 16px', background: 'var(--bb-accent-bg)', border: '1px solid var(--bb-accent)', color: 'var(--bb-fg)', fontSize: 13, fontWeight: 600 }}>
+                ✓ You&apos;re in! Welcome to the bold community.
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe}>
+                <div style={{ display: 'flex' }}>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="bb-input"
+                    style={{ flex: 1, fontSize: 13 }}
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    disabled={status === 'loading'}
+                  />
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}
+                    disabled={status === 'loading'}
+                  >
+                    {status === 'loading' ? '...' : '→'}
+                  </button>
+                </div>
+                {errorMsg && (
+                  <p style={{ color: 'var(--bb-accent)', fontSize: 12, marginTop: 6 }}>{errorMsg}</p>
+                )}
+              </form>
+            )}
           </div>
         </div>
       </div>

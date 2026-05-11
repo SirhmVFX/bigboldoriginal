@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import ProductCard from '@/components/ProductCard';
 import { PRODUCTS } from '@/lib/products';
 import { useScrollReveal } from '@/lib/useScrollReveal';
+import { heroApi, testimonialsApi, productsApi, blogApi, HeroContent, Testimonial, FirestoreProduct, BlogPost } from '@/lib/firestore';
+import { Product } from '@/lib/store';
 
 function useCountUp(target: number, active: boolean, duration = 1800) {
   const [val, setVal] = useState(0);
@@ -25,6 +27,35 @@ function useCountUp(target: number, active: boolean, duration = 1800) {
 
 const HERO_WORDS = ['CONFIDENCE', 'SIMPLICITY', 'LIFESTYLE', 'BOLDNESS'];
 
+// Convert Firestore product to local Product type for ProductCard
+function toLocalProduct(p: FirestoreProduct): Product {
+  return {
+    id: p.id ?? '',
+    name: p.name,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    category: p.category,
+    subcategory: p.subcategory,
+    images: p.images,
+    sizes: p.sizes,
+    colors: p.colors,
+    description: p.description,
+    details: p.details,
+    rating: p.rating,
+    reviews: p.reviews,
+    inStock: p.inStock,
+    isNew: p.isNew,
+    isBestSeller: p.isBestSeller,
+    tags: p.tags,
+  };
+}
+
+const STATIC_TESTIMONIALS = [
+  { name: 'Adaeze O.', location: 'Lagos',         text: "BIGBOLD is not just clothing, it's a whole vibe. The quality is unmatched and the fit is perfect every time.", rating: 5 },
+  { name: 'Emeka T.',  location: 'Abuja',         text: "I've been wearing BIGBOLD since day one. The Quiet Confidence Hoodie is my most-worn piece. Worth every naira.", rating: 5 },
+  { name: 'Chisom A.', location: 'Port Harcourt', text: 'Finally a Nigerian brand that gets it. The attention to detail, the quality, the aesthetic — all 10/10.', rating: 5 },
+];
+
 export default function HomePage() {
   useScrollReveal();
 
@@ -32,8 +63,22 @@ export default function HomePage() {
   const statsRef = useRef<HTMLDivElement>(null);
   const [statsVisible, setStatsVisible] = useState(false);
 
+  // Firestore data
+  const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [firestoreProducts, setFirestoreProducts] = useState<FirestoreProduct[]>([]);
+  const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
+
   const products  = useCountUp(50,   statsVisible);
   const customers = useCountUp(2300, statsVisible);
+
+  useEffect(() => {
+    // Load Firestore data in parallel, silently fall back on error
+    heroApi.get().then(d => { if (d) setHeroContent(d); }).catch(() => {});
+    testimonialsApi.getVisible().then(d => { if (d.length) setTestimonials(d); }).catch(() => {});
+    productsApi.getAll().then(d => { if (d.length) setFirestoreProducts(d); }).catch(() => {});
+    blogApi.getFeatured(3).then(d => { if (d.length) setFeaturedPosts(d); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setWordIdx(i => (i + 1) % HERO_WORDS.length), 2200);
@@ -48,8 +93,22 @@ export default function HomePage() {
     return () => obs.disconnect();
   }, []);
 
-  const featured    = PRODUCTS.filter(p => p.isBestSeller).slice(0, 4);
-  const newArrivals = PRODUCTS.filter(p => p.isNew).slice(0, 4);
+  // Use Firestore products if available, else fall back to static
+  const allProducts: Product[] = firestoreProducts.length > 0
+    ? firestoreProducts.map(toLocalProduct)
+    : PRODUCTS;
+
+  const featured    = allProducts.filter(p => p.isBestSeller).slice(0, 4);
+  const newArrivals = allProducts.filter(p => p.isNew).slice(0, 4);
+
+  // Hero content with fallbacks
+  const heroWords = heroContent?.words?.length ? heroContent.words : HERO_WORDS;
+  const heroDescription = heroContent?.description || 'Where sophistication meets unapologetic simplicity. More than a brand — a lifestyle built for those who move with quiet confidence.';
+  const heroCTAPrimary = heroContent?.ctaPrimary || 'Shop Now';
+  const heroCTASecondary = heroContent?.ctaSecondary || 'Our Story';
+
+  // Testimonials with fallback
+  const displayTestimonials = testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS;
 
   return (
     <div>
@@ -67,15 +126,15 @@ export default function HomePage() {
               <span className="animate-slideRight"        style={{ display: 'block', color: 'var(--bb-fg)',     opacity: 0 }}>BIG</span>
               <span className="animate-slideRight delay-200" style={{ display: 'block', color: 'var(--bb-accent)', opacity: 0 }}>BOLD</span>
               <span className="animate-slideRight delay-400" style={{ display: 'block', color: 'var(--bb-fg)', opacity: 0, fontSize: 'clamp(18px, 3vw, 36px)', fontWeight: 400, letterSpacing: '0.15em', marginTop: 16 }}>
-                {HERO_WORDS[wordIdx]}
+                {heroWords[wordIdx % heroWords.length]}
               </span>
             </h1>
             <p className="animate-fadeUp delay-500" style={{ color: 'var(--bb-muted)', fontSize: 'clamp(14px, 2vw, 18px)', lineHeight: 1.7, maxWidth: 480, marginBottom: 40, opacity: 0 }}>
-              Where sophistication meets unapologetic simplicity. More than a brand — a lifestyle built for those who move with quiet confidence.
+              {heroDescription}
             </p>
             <div className="animate-fadeUp delay-600" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', opacity: 0 }}>
-              <Link href="/products"><button className="btn-primary">Shop Now</button></Link>
-              <Link href="/about"><button className="btn-outline">Our Story</button></Link>
+              <Link href="/products"><button className="btn-primary">{heroCTAPrimary}</button></Link>
+              <Link href="/about"><button className="btn-outline">{heroCTASecondary}</button></Link>
             </div>
           </div>
 
@@ -411,11 +470,7 @@ export default function HomePage() {
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>WHAT THEY SAY</h2>
         </div>
         <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
-          {[
-            { name: 'Adaeze O.', location: 'Lagos',         text: 'BIGBOLD is not just clothing, it\'s a whole vibe. The quality is unmatched and the fit is perfect every time.', rating: 5 },
-            { name: 'Emeka T.',  location: 'Abuja',         text: 'I\'ve been wearing BIGBOLD since day one. The Quiet Confidence Hoodie is my most-worn piece. Worth every naira.', rating: 5 },
-            { name: 'Chisom A.', location: 'Port Harcourt', text: 'Finally a Nigerian brand that gets it. The attention to detail, the quality, the aesthetic — all 10/10.', rating: 5 },
-          ].map((review, i) => (
+          {displayTestimonials.slice(0, 3).map((review, i) => (
             <div key={i} style={{ background: 'var(--bb-bg-2)', padding: 32 }}>
               <div style={{ display: 'flex', gap: 3, marginBottom: 16 }}>
                 {[1,2,3,4,5].map(s => (
@@ -591,6 +646,46 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ── BLOG SECTION (only shown if posts exist) ── */}
+      {featuredPosts.length > 0 && (
+        <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto', borderTop: '1px solid var(--bb-border)' }}>
+          <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+            <div>
+              <div className="tag" style={{ marginBottom: 12 }}>From the Blog</div>
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>LATEST STORIES</h2>
+            </div>
+            <Link href="/blog" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">View All</button></Link>
+          </div>
+          <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
+            {featuredPosts.map((post, i) => (
+              <Link key={post.id ?? i} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
+                <div style={{ background: 'var(--bb-bg-2)', transition: 'background 0.2s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bb-bg-3)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bb-bg-2)')}>
+                  {post.coverImage && (
+                    <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden' }}>
+                      <Image src={post.coverImage} alt={post.title} fill style={{ objectFit: 'cover' }} />
+                    </div>
+                  )}
+                  <div style={{ padding: 24 }}>
+                    <div className="tag" style={{ marginBottom: 12, fontSize: 10 }}>{post.category}</div>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--bb-fg)', letterSpacing: '-0.01em', lineHeight: 1.3, marginBottom: 10 }}>{post.title}</h3>
+                    <p style={{ color: 'var(--bb-muted)', fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+                      {post.excerpt.length > 100 ? post.excerpt.slice(0, 100) + '...' : post.excerpt}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ color: 'var(--bb-subtle)', fontSize: 11 }}>{post.author}</span>
+                      <span style={{ color: 'var(--bb-border-2)', fontSize: 11 }}>·</span>
+                      <span style={{ color: 'var(--bb-subtle)', fontSize: 11 }}>{post.readTime} min read</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── CTA STRIP ── */}
       <section data-animate="scaleUp" style={{ background: 'var(--bb-accent)', padding: '64px 24px', textAlign: 'center' }}>
