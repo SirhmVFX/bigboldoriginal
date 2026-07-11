@@ -16,7 +16,8 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from './firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +32,28 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Create or ensure Firestore users/{uid} doc exists — so admin can see all customers
+async function ensureUserDoc(uid: string, email: string, name: string) {
+  try {
+    const ref = doc(db, 'users', uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        email,
+        displayName: name,
+        phone: '',
+        address: {},
+        totalOrders: 0,
+        totalSpend: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch {
+    // Non-fatal — auth still works even if Firestore write fails
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -52,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
     await sendEmailVerification(cred.user);
+    await ensureUserDoc(cred.user.uid, email, name);
   };
 
   const logout = async () => {
@@ -64,12 +88,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const cred = await signInWithPopup(auth, provider);
+    await ensureUserDoc(
+      cred.user.uid,
+      cred.user.email ?? '',
+      cred.user.displayName ?? ''
+    );
   };
 
   const updateUserProfile = async (name: string) => {
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, { displayName: name });
+      // Sync name to Firestore so admin sees updated name
+      await setDoc(
+        doc(db, 'users', auth.currentUser.uid),
+        { displayName: name, updatedAt: serverTimestamp() },
+        { merge: true }
+      ).catch(() => { });
       setUser({ ...auth.currentUser });
     }
   };
