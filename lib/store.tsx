@@ -41,6 +41,7 @@ type Action =
   | { type: 'UPDATE_QTY'; id: string; size: string; color: string; qty: number }
   | { type: 'CLEAR_CART' }
   | { type: 'TOGGLE_FAVORITE'; id: string }
+  | { type: 'HYDRATE'; cart: CartItem[]; favorites: string[] }
   | { type: 'SET_TOAST'; message: string | null };
 
 function reducer(state: StoreState, action: Action): StoreState {
@@ -76,6 +77,8 @@ function reducer(state: StoreState, action: Action): StoreState {
       };
     case 'CLEAR_CART':
       return { ...state, cart: [] };
+    case 'HYDRATE':
+      return { ...state, cart: action.cart, favorites: action.favorites };
     case 'TOGGLE_FAVORITE':
       return {
         ...state,
@@ -104,6 +107,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     favorites: [],
     toast: null,
   });
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('bb-store');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { cart?: CartItem[]; favorites?: string[] };
+        dispatch({ type: 'HYDRATE', cart: parsed.cart ?? [], favorites: parsed.favorites ?? [] });
+      }
+    } catch { /* ignore */ }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem('bb-store', JSON.stringify({ cart: state.cart, favorites: state.favorites }));
+    } catch { /* ignore */ }
+  }, [state.cart, state.favorites, hydrated]);
 
   const cartCount = state.cart.reduce((sum, i) => sum + i.quantity, 0);
   const cartTotal = state.cart.reduce((sum, i) => sum + i.product.price * i.quantity, 0);

@@ -257,7 +257,6 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-export const CATEGORIES = ['All', 'Tops', 'Bottoms', 'Outerwear', 'Accessories'];
 export const SORT_OPTIONS = ['Featured', 'Price: Low to High', 'Price: High to Low', 'Newest', 'Best Sellers', 'Top Rated'];
 
 export function formatPrice(price: number): string {
