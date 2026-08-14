@@ -6,11 +6,15 @@ import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
+import { useSite } from '@/lib/site';
+import { useCurrency } from '@/lib/currency';
 
 export default function Navbar() {
   const { cartCount } = useStore();
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
+  const { currencies, code, setCode } = useCurrency();
+  const { settings } = useSite();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -22,22 +26,25 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const promoText = settings?.promoBarText || '';
+
   const navBg = scrolled
     ? (isDark ? 'rgba(10,10,10,0.97)' : 'rgba(255,255,255,0.97)')
     : 'var(--bb-bg)';
 
   return (
     <>
-      {/* Promo bar */}
+      {promoText && (
       <div className="promo-banner ticker-wrap">
         <div className="ticker-inner">
           {Array(6).fill(null).map((_, i) => (
             <span key={i} style={{ marginRight: 48 }}>
-              FREE SHIPPING ON ORDERS OVER ₦50,000 &nbsp;·&nbsp; EST. 2023 &nbsp;·&nbsp; CONFIDENCE, SIMPLIFIED &nbsp;·&nbsp; MORE THAN A BRAND. A LIFESTYLE &nbsp;·&nbsp;
+              {promoText} &nbsp;·&nbsp;
             </span>
           ))}
         </div>
       </div>
+      )}
 
       <nav style={{
         position: 'sticky', top: 0, zIndex: 1000,
@@ -66,6 +73,7 @@ export default function Navbar() {
               { label: 'Shop', href: '/products' },
               { label: 'About', href: '/about' },
               { label: 'Contact', href: '/contact' },
+              { label: 'Track', href: '/track' },
             ].map(link => (
               <Link key={link.href} href={link.href} className="nav-link"
                 style={{ color: 'var(--bb-muted)', fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }}
@@ -78,21 +86,41 @@ export default function Navbar() {
 
           {/* Right icons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <select
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              aria-label="Currency"
+              style={{
+                background: 'transparent',
+                color: 'var(--bb-muted)',
+                border: '1px solid var(--bb-border)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                padding: '6px 8px',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {currencies.map(c => (
+                <option key={c.code} value={c.code}>{c.code}</option>
+              ))}
+            </select>
+
             <Link href="/products" style={{ color: 'var(--bb-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
             </Link>
 
-            {/* Profile / Auth */}
             {user ? (
               <Link href="/profile" className="hidden-mobile" style={{ color: 'var(--bb-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                 </svg>
               </Link>
             ) : (
@@ -107,7 +135,7 @@ export default function Navbar() {
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--bb-fg)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--bb-muted)')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
               {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
             </Link>
@@ -135,8 +163,8 @@ export default function Navbar() {
               style={{ background: 'none', border: 'none', color: 'var(--bb-muted)', cursor: 'pointer', padding: 4 }}
               className="show-mobile">
               {menuOpen
-                ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
               }
             </button>
           </div>
@@ -154,6 +182,7 @@ export default function Navbar() {
                 : [{ label: 'Sign In', href: '/login' }, { label: 'Create Account', href: '/signup' }]
               ),
               { label: 'Cart', href: '/cart' },
+              { label: 'Track Order', href: '/track' },
             ].map(link => (
               <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
                 style={{ color: 'var(--bb-fg)', fontSize: 16, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none', fontWeight: 700, padding: '16px 0', borderBottom: '1px solid var(--bb-border)' }}>
@@ -165,14 +194,14 @@ export default function Navbar() {
       </nav>
 
       <style>{`
-        @media (max-width: 768px) {
-          .hidden-mobile { display: none !important; }
-          .show-mobile { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .show-mobile { display: none !important; }
-        }
-      `}</style>
+                @media (max-width: 768px) {
+                    .hidden-mobile { display: none !important; }
+                    .show-mobile { display: flex !important; }
+                }
+                @media (min-width: 769px) {
+                    .show-mobile { display: none !important; }
+                }
+            `}</style>
     </>
   );
 }

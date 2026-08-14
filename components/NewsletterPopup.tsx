@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { newsletterApi } from '@/lib/firestore';
+import { useSite } from '@/lib/site';
 
 const STORAGE_KEY = 'bb-newsletter-shown';
 
@@ -10,6 +11,7 @@ function isValidEmail(email: string): boolean {
 }
 
 export default function NewsletterPopup() {
+  const { settings } = useSite();
   const [visible, setVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -146,8 +148,9 @@ export default function NewsletterPopup() {
             textTransform: 'uppercase',
             lineHeight: 1.1,
             marginBottom: 12,
+            whiteSpace: 'pre-line',
           }}>
-            JOIN THE BOLD<br />COMMUNITY
+            {settings?.newsletterTitle || 'JOIN THE BOLD COMMUNITY'}
           </h2>
           <p style={{
             color: 'var(--bb-muted)',
@@ -155,8 +158,9 @@ export default function NewsletterPopup() {
             lineHeight: 1.7,
             maxWidth: 320,
             margin: '0 auto',
+            whiteSpace: 'pre-line',
           }}>
-            Get early access to drops, exclusive offers, and behind-the-scenes content.
+            {settings?.newsletterBody}
           </p>
         </div>
 

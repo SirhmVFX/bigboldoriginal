@@ -4,10 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import ProductCard from '@/components/ProductCard';
-import { PRODUCTS } from '@/lib/products';
 import { useScrollReveal } from '@/lib/useScrollReveal';
-import { heroApi, testimonialsApi, productsApi, blogApi, HeroContent, Testimonial, FirestoreProduct, BlogPost } from '@/lib/firestore';
+import { productsApi, testimonialsApi, blogApi, FirestoreProduct, BlogPost, Testimonial } from '@/lib/firestore';
 import { Product } from '@/lib/store';
+import { useSite } from '@/lib/site';
+import { useCurrency } from '@/lib/currency';
 
 function useCountUp(target: number, active: boolean, duration = 1800) {
   const [val, setVal] = useState(0);
@@ -25,9 +26,6 @@ function useCountUp(target: number, active: boolean, duration = 1800) {
   return val;
 }
 
-const HERO_WORDS = ['CONFIDENCE', 'SIMPLICITY', 'LIFESTYLE', 'BOLDNESS'];
-
-// Convert Firestore product to local Product type for ProductCard
 function toLocalProduct(p: FirestoreProduct): Product {
   return {
     id: p.id ?? '',
@@ -50,40 +48,35 @@ function toLocalProduct(p: FirestoreProduct): Product {
   };
 }
 
-const STATIC_TESTIMONIALS = [
-  { name: 'Adaeze O.', location: 'Lagos',         text: "BIGBOLD is not just clothing, it's a whole vibe. The quality is unmatched and the fit is perfect every time.", rating: 5 },
-  { name: 'Emeka T.',  location: 'Abuja',         text: "I've been wearing BIGBOLD since day one. The Quiet Confidence Hoodie is my most-worn piece. Worth every naira.", rating: 5 },
-  { name: 'Chisom A.', location: 'Port Harcourt', text: 'Finally a Nigerian brand that gets it. The attention to detail, the quality, the aesthetic — all 10/10.', rating: 5 },
-];
-
 export default function HomePage() {
   useScrollReveal();
+  const { homepage: hp, settings, hero } = useSite();
+  const { format } = useCurrency();
 
   const [wordIdx, setWordIdx] = useState(0);
   const statsRef = useRef<HTMLDivElement>(null);
   const [statsVisible, setStatsVisible] = useState(false);
-
-  // Firestore data
-  const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [firestoreProducts, setFirestoreProducts] = useState<FirestoreProduct[]>([]);
   const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
 
-  const products  = useCountUp(50,   statsVisible);
-  const customers = useCountUp(2300, statsVisible);
+  const stat0 = useCountUp(hp?.stats?.[0]?.target ?? 0, statsVisible);
+  const stat1 = useCountUp(hp?.stats?.[1]?.target ?? 0, statsVisible);
+  const stat2 = useCountUp(hp?.stats?.[2]?.target ?? 0, statsVisible);
+  const stat3 = useCountUp(hp?.stats?.[3]?.target ?? 0, statsVisible);
+  const statVals = [stat0, stat1, stat2, stat3];
 
   useEffect(() => {
-    // Load Firestore data in parallel, silently fall back on error
-    heroApi.get().then(d => { if (d) setHeroContent(d); }).catch(() => {});
-    testimonialsApi.getVisible().then(d => { if (d.length) setTestimonials(d); }).catch(() => {});
-    productsApi.getAll().then(d => { if (d.length) setFirestoreProducts(d); }).catch(() => {});
-    blogApi.getFeatured(3).then(d => { if (d.length) setFeaturedPosts(d); }).catch(() => {});
+    testimonialsApi.getVisible().then(d => setTestimonials(d)).catch(() => {});
+    productsApi.getAll().then(d => setFirestoreProducts(d)).catch(() => {});
+    blogApi.getFeatured(3).then(d => setFeaturedPosts(d)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const t = setInterval(() => setWordIdx(i => (i + 1) % HERO_WORDS.length), 2200);
+    const words = hero?.words?.length ? hero.words : [''];
+    const t = setInterval(() => setWordIdx(i => (i + 1) % words.length), 2200);
     return () => clearInterval(t);
-  }, []);
+  }, [hero?.words]);
 
   useEffect(() => {
     const el = statsRef.current;
@@ -93,35 +86,29 @@ export default function HomePage() {
     return () => obs.disconnect();
   }, []);
 
-  // Use Firestore products if available, else fall back to static
-  const allProducts: Product[] = firestoreProducts.length > 0
-    ? firestoreProducts.map(toLocalProduct)
-    : PRODUCTS;
-
+  const allProducts: Product[] = firestoreProducts.map(toLocalProduct);
   const featured    = allProducts.filter(p => p.isBestSeller).slice(0, 4);
   const newArrivals = allProducts.filter(p => p.isNew).slice(0, 4);
+  const sidebarProducts = allProducts.slice(0, 4);
 
-  // Hero content with fallbacks
-  const heroWords = heroContent?.words?.length ? heroContent.words : HERO_WORDS;
-  const heroDescription = heroContent?.description || 'Where sophistication meets unapologetic simplicity. More than a brand — a lifestyle built for those who move with quiet confidence.';
-  const heroCTAPrimary = heroContent?.ctaPrimary || 'Shop Now';
-  const heroCTASecondary = heroContent?.ctaSecondary || 'Our Story';
-
-  // Testimonials with fallback
-  const displayTestimonials = testimonials.length > 0 ? testimonials : STATIC_TESTIMONIALS;
+  const heroWords = hero?.words?.length ? hero.words : [''];
+  const heroDescription = hero?.description || '';
+  const heroCTAPrimary = hero?.ctaPrimary || 'Shop Now';
+  const heroCTASecondary = hero?.ctaSecondary || 'Our Story';
+  const displayTestimonials = testimonials;
 
   return (
     <div>
       {/* ── HERO ── */}
       <section className="grid-bg noise" style={{ position: 'relative', minHeight: '95vh', display: 'flex', alignItems: 'center', overflow: 'hidden', background: 'var(--bb-bg)' }}>
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <Image src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=1600&q=80" alt="BIGBOLD Hero" fill style={{ objectFit: 'cover', opacity: 0.18 }} priority />
+          <Image src={hero?.backgroundImage || '/images/logo black.png'} alt="BIGBOLD Hero" fill style={{ objectFit: 'cover', opacity: 0.18 }} priority />
         </div>
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--bb-accent)', zIndex: 2 }} />
 
         <div style={{ position: 'relative', zIndex: 2, maxWidth: 1400, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
           <div style={{ maxWidth: 800 }}>
-            <div className="tag animate-fadeIn" style={{ marginBottom: 28 }}>EST. 2023 — NIGERIA</div>
+            <div className="tag animate-fadeIn" style={{ marginBottom: 28 }}>{hero?.tagline}</div>
             <h1 style={{ fontSize: 'clamp(52px, 10vw, 120px)', fontWeight: 900, lineHeight: 0.92, letterSpacing: '-0.03em', marginBottom: 32 }}>
               <span className="animate-slideRight"        style={{ display: 'block', color: 'var(--bb-fg)',     opacity: 0 }}>BIG</span>
               <span className="animate-slideRight delay-200" style={{ display: 'block', color: 'var(--bb-accent)', opacity: 0 }}>BOLD</span>
@@ -163,7 +150,7 @@ export default function HomePage() {
         <div className="ticker-inner" style={{ color: 'var(--bb-accent-fg)', fontWeight: 800, fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {Array(8).fill(null).map((_, i) => (
             <span key={i} style={{ marginRight: 48 }}>
-              BIGBOLD ORIGINAL &nbsp;·&nbsp; CONFIDENCE SIMPLIFIED &nbsp;·&nbsp; MORE THAN A BRAND &nbsp;·&nbsp; A LIFESTYLE &nbsp;·&nbsp;
+              {hp?.tickerText} &nbsp;·&nbsp;
             </span>
           ))}
         </div>
@@ -172,14 +159,11 @@ export default function HomePage() {
       {/* ── STATS ── */}
       <div ref={statsRef} style={{ background: 'var(--bb-bg-2)', borderBottom: '1px solid var(--bb-border)' }}>
         <div data-stagger className="stats-grid" style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
-          {[
-            { value: `${products}+`,           label: 'Products' },
-            { value: `${customers.toLocaleString()}+`, label: 'Customers' },
-            { value: statsVisible ? '1+' : '0+', label: 'Year Strong' },
-            { value: '100%',                   label: 'Made in Nigeria' },
-          ].map((stat, i) => (
-            <div key={i} style={{ textAlign: 'center', padding: '24px', borderRight: i < 3 ? '1px solid var(--bb-border)' : 'none' }}>
-              <div style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, color: 'var(--bb-fg)', letterSpacing: '-0.02em' }}>{stat.value}</div>
+          {(hp?.stats ?? []).map((stat, i) => (
+            <div key={stat.label} style={{ textAlign: 'center', padding: '24px', borderRight: i < 3 ? '1px solid var(--bb-border)' : 'none' }}>
+              <div style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, color: 'var(--bb-fg)', letterSpacing: '-0.02em' }}>
+                {statVals[i] ?? stat.target}{stat.suffix}
+              </div>
               <div style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 6 }}>{stat.label}</div>
             </div>
           ))}
@@ -191,39 +175,14 @@ export default function HomePage() {
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '64px 24px 0' }}>
           <div data-animate="fadeUp" style={{ marginBottom: 48 }}>
             <p style={{ fontSize: 'clamp(22px, 4vw, 36px)', fontWeight: 900, color: 'var(--bb-fg)', letterSpacing: '-0.02em' }}>
-              why <span style={{ fontStyle: 'italic', fontWeight: 400 }}>BIGBOLD?</span>
+              {hp?.whyTitle}
             </p>
           </div>
         </div>
 
         <div className="why-grid" style={{ maxWidth: 1400, margin: '0 auto', borderTop: '1px solid var(--bb-border)' }}>
-          {[
-            {
-              num: '01',
-              desc: 'Get your order delivered quickly, straight to your door.',
-              title: 'FAST SHIPPING',
-              sub: '3–5 Business Days',
-            },
-            {
-              num: '02',
-              desc: 'Return your items hassle-free. Our flexible policy makes it simple.',
-              title: 'EASY RETURNS',
-              sub: '14 Days From Delivery',
-            },
-            {
-              num: '03',
-              desc: 'Pay for your order with confidence. Your details are always protected.',
-              title: 'SECURE PAYMENTS',
-              sub: 'Bank-Grade SSL Protection',
-            },
-            {
-              num: '04',
-              desc: 'Get the help you need, fast. Our dedicated team is here for you.',
-              title: 'CUSTOMER SUPPORT',
-              sub: 'hello@bigboldoriginal.com',
-            },
-          ].map((item, i) => (
-            <div key={i} className="why-item">
+          {(hp?.whyItems ?? []).map((item) => (
+            <div key={item.num} className="why-item">
               <span className="why-num">{item.num}</span>
               <p className="why-desc">{item.desc}</p>
               <p className="why-title">{item.title}</p>
@@ -239,7 +198,7 @@ export default function HomePage() {
           {/* Left — big photo + headline */}
           <div className="editorial-photo" data-animate="fadeIn" style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
             <Image
-              src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1200&q=85"
+              src={hp?.editorialImage || '/images/logo black.png'}
               alt="Wear the lifestyle"
               fill
               style={{ objectFit: 'cover', objectPosition: 'center top' }}
@@ -250,7 +209,7 @@ export default function HomePage() {
             {/* Text overlay */}
             <div data-animate="fadeUp" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 48px' }}>
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 14 }}>
-                DRESS THE UNCONVENTIONAL
+                {hp?.editorialTag}
               </p>
               <h2 style={{
                 fontSize: 'clamp(48px, 7vw, 88px)',
@@ -260,8 +219,8 @@ export default function HomePage() {
                 lineHeight: 0.9,
                 textTransform: 'uppercase',
               }}>
-                WEAR THE<br />
-                <span style={{ fontStyle: 'italic', fontWeight: 400 }}>LIFESTYLE</span>
+                {hp?.editorialTitle}<br />
+                <span style={{ fontStyle: 'italic', fontWeight: 400 }}>{hp?.editorialItalic}</span>
               </h2>
             </div>
 
@@ -283,7 +242,7 @@ export default function HomePage() {
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bb-accent)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'var(--bb-fg)')}
               >
-                <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'inherit' }}>SHOP NOW</span>
+                <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'inherit' }}>{hp?.editorialCta}</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
@@ -293,7 +252,7 @@ export default function HomePage() {
 
           {/* Right — product stack */}
           <div className="editorial-sidebar" data-animate="slideLeft" style={{ background: 'var(--bb-bg-2)', borderLeft: '1px solid var(--bb-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {PRODUCTS.slice(0, 4).map((product, i) => (
+            {sidebarProducts.map((product) => (
               <Link key={product.id} href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
                 <div
                   style={{
@@ -319,7 +278,7 @@ export default function HomePage() {
                     <p style={{ color: 'var(--bb-muted)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>{product.category}</p>
                     <p style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</p>
                     <p style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 900 }}>
-                      ₦{product.price.toLocaleString()}
+                      {format(product.price)}
                     </p>
                   </div>
 
@@ -367,8 +326,8 @@ export default function HomePage() {
       <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto' }}>
         <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
           <div>
-            <div className="tag" style={{ marginBottom: 12 }}>Best Sellers</div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>THE ESSENTIALS</h2>
+            <div className="tag" style={{ marginBottom: 12 }}>{hp?.featuredTag}</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>{hp?.featuredTitle}</h2>
           </div>
           <Link href="/products" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">View All</button></Link>
         </div>
@@ -385,20 +344,20 @@ export default function HomePage() {
       <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
         <div className="promo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: 'var(--bb-border)' }}>
           <div data-animate="slideRight" style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: '#111' }}>
-            <Image src="https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80" alt="New Arrivals" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
+            <Image src={hp?.promoNewImage || '/images/logo black.png'} alt="New Arrivals" fill style={{ objectFit: 'cover', opacity: 0.5 }} />
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 32 }}>
-              <div className="tag" style={{ marginBottom: 12, width: 'fit-content' }}>New Drop</div>
-              <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: 16 }}>NEW ARRIVALS<br />ARE HERE</h3>
-              <Link href="/products?filter=new"><button className="btn-primary">Shop New</button></Link>
+              <div className="tag" style={{ marginBottom: 12, width: 'fit-content' }}>{hp?.promoNewTag}</div>
+              <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: 16, whiteSpace: 'pre-line' }}>{hp?.promoNewTitle}</h3>
+              <Link href={hp?.promoNewHref || '/products?filter=new'}><button className="btn-primary">{hp?.promoNewCta}</button></Link>
             </div>
           </div>
           <div data-animate="slideLeft" style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: 'var(--bb-accent)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 40 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--bb-accent-fg)', marginBottom: 12 }}>Limited Time</p>
-            <h3 style={{ fontSize: 'clamp(24px, 3.5vw, 48px)', fontWeight: 900, color: 'var(--bb-accent-fg)', letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: 20 }}>
-              UP TO<br />20% OFF<br />SELECTED
+            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--bb-accent-fg)', marginBottom: 12 }}>{hp?.promoSaleTag}</p>
+            <h3 style={{ fontSize: 'clamp(24px, 3.5vw, 48px)', fontWeight: 900, color: 'var(--bb-accent-fg)', letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: 20, whiteSpace: 'pre-line' }}>
+              {hp?.promoSaleTitle}
             </h3>
-            <Link href="/products?filter=sale">
-              <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-accent)', border: 'none', padding: '14px 32px', fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>Shop Sale</button>
+            <Link href={hp?.promoSaleHref || '/products?filter=sale'}>
+              <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-accent)', border: 'none', padding: '14px 32px', fontWeight: 700, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}>{hp?.promoSaleCta}</button>
             </Link>
           </div>
         </div>
@@ -406,17 +365,17 @@ export default function HomePage() {
         {/* Full-width promo */}
         <div className="promo-fullwidth" data-animate="fadeUp" style={{ marginTop: 1, position: 'relative', height: 200, overflow: 'hidden', background: 'var(--bb-bg-2)', border: '1px solid var(--bb-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px' }}>
           <div>
-            <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Free Shipping</p>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>{hp?.promoShippingLabel}</p>
             <h3 style={{ fontSize: 'clamp(20px, 3vw, 36px)', fontWeight: 900, color: 'var(--bb-fg)' }}>
-              ORDERS OVER <span style={{ color: 'var(--bb-accent)' }}>₦50,000</span>
+              {hp?.promoShippingTitle || `ORDERS OVER ${format(settings?.freeShippingThreshold ?? 0)}`}
             </h3>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Use Code</p>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 12, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>{hp?.promoCodeLabel}</p>
             <div style={{ border: '1px solid var(--bb-accent)', padding: '12px 24px', display: 'inline-block' }}>
-              <span style={{ color: 'var(--bb-accent)', fontSize: 24, fontWeight: 900, letterSpacing: '0.1em' }}>BOLD10</span>
+              <span style={{ color: 'var(--bb-accent)', fontSize: 24, fontWeight: 900, letterSpacing: '0.1em' }}>{hp?.promoCode}</span>
             </div>
-            <p style={{ color: 'var(--bb-muted)', fontSize: 11, marginTop: 8 }}>10% off your first order</p>
+            <p style={{ color: 'var(--bb-muted)', fontSize: 11, marginTop: 8 }}>{hp?.promoCodeSub}</p>
           </div>
         </div>
       </section>
@@ -425,8 +384,8 @@ export default function HomePage() {
       <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
         <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
           <div>
-            <div className="tag" style={{ marginBottom: 12 }}>Just Dropped</div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>NEW ARRIVALS</h2>
+            <div className="tag" style={{ marginBottom: 12 }}>{hp?.newArrivalsTag}</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>{hp?.newArrivalsTitle}</h2>
           </div>
           <Link href="/products?filter=new" style={{ textDecoration: 'none' }}><button className="btn-accent-outline">See All New</button></Link>
         </div>
@@ -444,18 +403,18 @@ export default function HomePage() {
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px' }}>
           <div className="about-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
           <div data-animate="slideRight">
-            <div className="tag" style={{ marginBottom: 20 }}>Our Story</div>
+            <div className="tag" style={{ marginBottom: 20 }}>{hp?.aboutTag}</div>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', lineHeight: 1, marginBottom: 24 }}>
-              IN A WORLD FULL<br />OF NOISE, WE CHOOSE<br /><span style={{ color: 'var(--bb-accent)' }}>QUIET CONFIDENCE.</span>
+              {hp?.aboutTitle}<br /><span style={{ color: 'var(--bb-accent)' }}>{hp?.aboutTitleAccent}</span>
             </h2>
             <p style={{ color: 'var(--bb-muted)', fontSize: 15, lineHeight: 1.8, marginBottom: 32 }}>
-              BIGBOLD was born in 2023 from a simple belief: that true style doesn't shout. It whispers. We create pieces for those who understand that confidence is the quietest — and loudest — statement you can make.
+              {hp?.aboutBody}
             </p>
-            <Link href="/about"><button className="btn-outline">Read Our Story</button></Link>
+            <Link href="/about"><button className="btn-outline">{hp?.aboutCta}</button></Link>
           </div>
           <div data-animate="slideLeft" style={{ position: 'relative' }}>
             <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden' }}>
-              <Image src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=800&q=80" alt="BIGBOLD Story" fill style={{ objectFit: 'cover' }} />
+              <Image src={hp?.aboutImage || '/images/logo black.png'} alt="BIGBOLD Story" fill style={{ objectFit: 'cover' }} />
             </div>
             <div style={{ position: 'absolute', bottom: -12, right: -12, width: 80, height: 80, border: '3px solid var(--bb-accent)', zIndex: 2 }} />
           </div>
@@ -464,6 +423,7 @@ export default function HomePage() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
+      {displayTestimonials.length > 0 && (
       <section style={{ padding: '80px 24px', maxWidth: 1400, margin: '0 auto' }}>
         <div data-animate="fadeUp" style={{ textAlign: 'center', marginBottom: 56 }}>
           <div className="tag" style={{ marginBottom: 12 }}>Reviews</div>
@@ -486,6 +446,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
       {/* ── REWARDS ── */}
       <section style={{ background: 'var(--bb-fg)', overflow: 'hidden', position: 'relative' }}>
@@ -497,52 +458,27 @@ export default function HomePage() {
           <div data-animate="fadeUp" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 64, flexWrap: 'wrap', gap: 20 }}>
             <div>
               <div style={{ display: 'inline-block', padding: '4px 12px', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.5)', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 16 }}>
-                Member Rewards
+                {hp?.rewardsTag}
               </div>
-              <h2 style={{ fontSize: 'clamp(28px, 5vw, 60px)', fontWeight: 900, color: 'var(--bb-bg)', letterSpacing: '-0.03em', lineHeight: 0.95 }}>
-                SPEND MORE.<br />SAVE MORE.
+              <h2 style={{ fontSize: 'clamp(28px, 5vw, 60px)', fontWeight: 900, color: 'var(--bb-bg)', letterSpacing: '-0.03em', lineHeight: 0.95, whiteSpace: 'pre-line' }}>
+                {hp?.rewardsTitle}
               </h2>
             </div>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, lineHeight: 1.7, maxWidth: 320 }}>
-              Every purchase moves you closer to a reward tier. Unlock exclusive discounts that apply automatically to every order after.
+              {hp?.rewardsSubtitle}
             </p>
           </div>
 
           {/* Cards */}
           <div data-stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'rgba(255,255,255,0.08)' }} className="rewards-grid">
-            {[
-              {
-                tier: 'BOLD',
-                range: '₦50,000 – ₦100,000',
-                discount: '2%',
-                label: 'off every purchase',
-                desc: 'Your first step into the BIGBOLD family. Spend between ₦50k and ₦100k in a single order and unlock the Bold Member card.',
-                cardBg: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
-                cardAccent: 'rgba(255,255,255,0.15)',
-                badge: 'ENTRY',
-              },
-              {
-                tier: 'ELITE',
-                range: '₦200,000 – ₦990,000',
-                discount: '5%',
-                label: 'off every purchase',
-                desc: 'For those who move with intention. A single order between ₦200k and ₦990k earns you the Elite Member card.',
-                cardBg: 'linear-gradient(135deg, #1c1c1c 0%, #3a3a3a 60%, #1c1c1c 100%)',
-                cardAccent: 'rgba(255,255,255,0.25)',
-                badge: 'POPULAR',
-              },
-              {
-                tier: 'GOLD',
-                range: '₦1,000,000+',
-                discount: '10%',
-                label: 'off every purchase',
-                desc: 'The pinnacle of the BIGBOLD experience. Spend over ₦1 million in a single order and join the Gold tier — for life.',
-                cardBg: 'linear-gradient(135deg, #2a2200 0%, #5a4800 50%, #2a2200 100%)',
-                cardAccent: 'rgba(255,215,0,0.3)',
-                badge: 'EXCLUSIVE',
-              },
-            ].map((card, i) => (
-              <div key={i} style={{ background: 'var(--bb-fg)', padding: '40px 36px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {(hp?.rewards ?? []).map((card, i) => {
+              const visuals = [
+                { cardBg: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)', cardAccent: 'rgba(255,255,255,0.15)' },
+                { cardBg: 'linear-gradient(135deg, #1c1c1c 0%, #3a3a3a 60%, #1c1c1c 100%)', cardAccent: 'rgba(255,255,255,0.25)' },
+                { cardBg: 'linear-gradient(135deg, #2a2200 0%, #5a4800 50%, #2a2200 100%)', cardAccent: 'rgba(255,215,0,0.3)' },
+              ][i] ?? { cardBg: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)', cardAccent: 'rgba(255,255,255,0.15)' };
+              return (
+              <div key={card.tier} style={{ background: 'var(--bb-fg)', padding: '40px 36px', display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {/* Badge */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                   <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>{card.badge}</span>
@@ -551,8 +487,8 @@ export default function HomePage() {
 
                 {/* Physical card mockup */}
                 <div style={{
-                  background: card.cardBg,
-                  border: `1px solid ${card.cardAccent}`,
+                  background: visuals.cardBg,
+                  border: `1px solid ${visuals.cardAccent}`,
                   padding: '24px 20px',
                   marginBottom: 32,
                   position: 'relative',
@@ -563,12 +499,12 @@ export default function HomePage() {
                   justifyContent: 'space-between',
                 }}>
                   {/* Shine */}
-                  <div style={{ position: 'absolute', top: -40, right: -40, width: 120, height: 120, background: card.cardAccent, borderRadius: '50%', filter: 'blur(40px)' }} />
+                  <div style={{ position: 'absolute', top: -40, right: -40, width: 120, height: 120, background: visuals.cardAccent, borderRadius: '50%', filter: 'blur(40px)' }} />
 
                   {/* Top row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
                     <div>
-                      <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>BIGBOLD</p>
+                      <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>{settings?.siteName ?? 'BIGBOLD'}</p>
                       <p style={{ fontSize: 13, fontWeight: 900, color: '#ffffff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{card.tier}</p>
                     </div>
                     {/* Chip */}
@@ -606,19 +542,20 @@ export default function HomePage() {
                   <span style={{ color: 'var(--bb-bg)', fontSize: 13, fontWeight: 800 }}>{card.range}</span>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* Footer note */}
           <div data-animate="fadeUp" style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, lineHeight: 1.7, maxWidth: 480 }}>
-              Discounts are applied automatically on your next order once your tier is activated. Tiers are based on a single qualifying order, not cumulative spend.
+              {hp?.rewardsFooter}
             </p>
             <Link href="/products">
               <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-fg)', border: 'none', padding: '14px 32px', fontWeight: 800, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', transition: 'opacity 0.2s', whiteSpace: 'nowrap' }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
-                Start Shopping →
+                {hp?.rewardsCta}
               </button>
             </Link>
           </div>
@@ -626,26 +563,21 @@ export default function HomePage() {
       </section>
 
       {/* ── INSTAGRAM GRID ── */}
+      {(hp?.instagramImages?.length ?? 0) > 0 && (
       <section style={{ padding: '0 24px 80px', maxWidth: 1400, margin: '0 auto' }}>
         <div data-animate="fadeUp" style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div className="tag" style={{ marginBottom: 12 }}>@bigboldoriginal_</div>
-          <h2 style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>FOLLOW THE MOVEMENT</h2>
+          <div className="tag" style={{ marginBottom: 12 }}>{hp?.instagramHandle}</div>
+          <h2 style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)' }}>{hp?.instagramTitle}</h2>
         </div>
         <div data-stagger className="insta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2 }}>
-          {[
-            'https://images.unsplash.com/photo-1523398002811-999ca8dec234?w=400&q=80',
-            'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=400&q=80',
-            'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80',
-            'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&q=80',
-            'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&q=80',
-            'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&q=80',
-          ].map((src, i) => (
+          {(hp?.instagramImages ?? []).map((src, i) => (
             <div key={i} className="img-zoom" style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'var(--bb-border)' }}>
               <Image src={src} alt={`Instagram ${i + 1}`} fill style={{ objectFit: 'cover' }} />
             </div>
           ))}
         </div>
       </section>
+      )}
 
       {/* ── BLOG SECTION (only shown if posts exist) ── */}
       {featuredPosts.length > 0 && (
@@ -689,15 +621,15 @@ export default function HomePage() {
 
       {/* ── CTA STRIP ── */}
       <section data-animate="scaleUp" style={{ background: 'var(--bb-accent)', padding: '64px 24px', textAlign: 'center' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--bb-accent-fg)', marginBottom: 12 }}>Ready to be bold?</p>
-        <h2 style={{ fontSize: 'clamp(32px, 6vw, 72px)', fontWeight: 900, color: 'var(--bb-accent-fg)', letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: 32 }}>
-          SHOP THE<br />COLLECTION
+        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--bb-accent-fg)', marginBottom: 12 }}>{hp?.ctaTag}</p>
+        <h2 style={{ fontSize: 'clamp(32px, 6vw, 72px)', fontWeight: 900, color: 'var(--bb-accent-fg)', letterSpacing: '-0.03em', lineHeight: 0.95, marginBottom: 32, whiteSpace: 'pre-line' }}>
+          {hp?.ctaTitle}
         </h2>
         <Link href="/products">
           <button style={{ background: 'var(--bb-bg)', color: 'var(--bb-accent)', border: 'none', padding: '16px 48px', fontWeight: 800, fontSize: 14, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'transform 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-3px)')}
             onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}>
-            Shop Now →
+            {hp?.ctaButton}
           </button>
         </Link>
       </section>

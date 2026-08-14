@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { Product } from '@/lib/store';
 import { useStore } from '@/lib/store';
-import { formatPrice } from '@/lib/products';
+import { useCurrency } from '@/lib/currency';
 
 interface Props {
   product: Product;
@@ -14,6 +14,7 @@ interface Props {
 
 export default function ProductCard({ product, index = 0 }: Props) {
   const { state, dispatch, showToast } = useStore();
+  const { format } = useCurrency();
   const [imgIdx, setImgIdx] = useState(0);
   const isFav = state.favorites.includes(product.id);
 
@@ -105,9 +106,9 @@ export default function ProductCard({ product, index = 0 }: Props) {
 
           {/* Price */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 700 }}>{formatPrice(product.price)}</span>
+            <span style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 700 }}>{format(product.price)}</span>
             {product.originalPrice && (
-              <span style={{ color: 'var(--bb-muted)', fontSize: 13, textDecoration: 'line-through' }}>{formatPrice(product.originalPrice)}</span>
+              <span style={{ color: 'var(--bb-muted)', fontSize: 13, textDecoration: 'line-through' }}>{format(product.originalPrice)}</span>
             )}
           </div>
 

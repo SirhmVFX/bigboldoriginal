@@ -4,6 +4,7 @@ import './globals.css';
 import { StoreProvider } from '@/lib/store';
 import { ThemeProvider } from '@/lib/theme';
 import { AuthProvider } from '@/lib/auth';
+import { SiteProvider } from '@/lib/site';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import NewsletterPopup from '@/components/NewsletterPopup';
@@ -35,14 +36,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <ThemeProvider>
           <AuthProvider>
-            <StoreProvider>
-              <Navbar />
-              <main style={{ flex: 1 }}>
-                {children}
-              </main>
-              <Footer />
-              <NewsletterPopup />
-            </StoreProvider>
+            <SiteProvider>
+              <StoreProvider>
+                <Navbar />
+                <main style={{ flex: 1 }}>
+                  {children}
+                </main>
+                <Footer />
+                <NewsletterPopup />
+              </StoreProvider>
+            </SiteProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

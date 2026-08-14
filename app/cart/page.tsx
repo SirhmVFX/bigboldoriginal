@@ -1,29 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useStore } from '@/lib/store';
-import { formatPrice } from '@/lib/products';
+import { useCurrency } from '@/lib/currency';
+import { useSite } from '@/lib/site';
+import { promoCodesApi } from '@/lib/firestore';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
   const { state, dispatch, cartTotal, showToast } = useStore();
+  const { format } = useCurrency();
+  const { settings } = useSite();
+  const router = useRouter();
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
+  const [promoLabel, setPromoLabel] = useState('');
+  const [promoError, setPromoError] = useState('');
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(50000);
+  const [shippingCost, setShippingCost] = useState(3500);
 
-  const applyPromo = () => {
-    if (promoCode.toUpperCase() === 'BOLD10') {
-      setDiscount(0.1);
+  useEffect(() => {
+    if (settings) {
+      setFreeShippingThreshold(settings.freeShippingThreshold ?? 50000);
+      setShippingCost(settings.shippingCost ?? 3500);
+    }
+  }, [settings]);
+
+  const applyPromo = async () => {
+    setPromoError('');
+    if (!promoCode.trim()) return;
+    try {
+      const codes = await promoCodesApi.getAll();
+      const match = codes.find(c =>
+        c.code.toUpperCase() === promoCode.toUpperCase() && c.isActive
+      );
+      if (!match) {
+        setPromoError('Invalid or inactive promo code.');
+        showToast('Invalid promo code');
+        return;
+      }
+      const discountRate = match.type === 'percentage'
+        ? match.discount / 100
+        : match.discount / cartTotal; // convert fixed to fraction
+      setDiscount(discountRate);
       setPromoApplied(true);
-      showToast('Promo code applied! 10% off');
-    } else {
+      setPromoLabel(match.code);
+      showToast(`Promo applied! ${match.type === 'percentage' ? match.discount + '%' : format(match.discount)} off`);
+    } catch {
+      setPromoError('Could not validate promo code.');
       showToast('Invalid promo code');
     }
   };
 
   const discountAmount = cartTotal * discount;
-  const shipping = cartTotal >= 50000 ? 0 : 3500;
+  const shipping = cartTotal >= freeShippingThreshold ? 0 : shippingCost;
   const total = cartTotal - discountAmount + shipping;
 
   if (state.cart.length === 0) {
@@ -31,7 +64,7 @@ export default function CartPage() {
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
         <div style={{ marginBottom: 32 }}>
           <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--bb-border-2)" strokeWidth="1.5" style={{ margin: '0 auto 24px' }}>
-            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
           <h1 style={{ fontSize: 32, fontWeight: 900, color: 'var(--bb-fg)', marginBottom: 12 }}>YOUR CART IS EMPTY</h1>
           <p style={{ color: '#555', fontSize: 15, marginBottom: 32 }}>Looks like you haven't added anything yet.</p>
@@ -78,7 +111,7 @@ export default function CartPage() {
                     <h3 style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 700, marginBottom: 4, letterSpacing: '0.02em' }}>{item.product.name}</h3>
                   </Link>
                   <p style={{ color: '#555', fontSize: 12, marginBottom: 4 }}>Color: {item.color}</p>
-                  <p style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 700 }}>{formatPrice(item.product.price)}</p>
+                  <p style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 700 }}>{format(item.product.price)}</p>
                   <button
                     onClick={() => { dispatch({ type: 'REMOVE_FROM_CART', id: item.product.id, size: item.size, color: item.color }); showToast('Item removed'); }}
                     style={{ background: 'none', border: 'none', color: '#555', fontSize: 12, cursor: 'pointer', marginTop: 8, padding: 0, textDecoration: 'underline', transition: 'color 0.2s' }}
@@ -104,7 +137,7 @@ export default function CartPage() {
 
               {/* Total */}
               <span style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 800, minWidth: 80, textAlign: 'right' }}>
-                {formatPrice(item.product.price * item.quantity)}
+                {format(item.product.price * item.quantity)}
               </span>
             </div>
           ))}
@@ -131,22 +164,22 @@ export default function CartPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#888', fontSize: 14 }}>Subtotal</span>
-              <span style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 600 }}>{formatPrice(cartTotal)}</span>
+              <span style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 600 }}>{format(cartTotal)}</span>
             </div>
             {discount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--bb-accent)', fontSize: 14 }}>Discount (BOLD10)</span>
-                <span style={{ color: 'var(--bb-accent)', fontSize: 14, fontWeight: 600 }}>-{formatPrice(discountAmount)}</span>
+                <span style={{ color: 'var(--bb-accent)', fontSize: 14 }}>Discount ({promoLabel})</span>
+                <span style={{ color: 'var(--bb-accent)', fontSize: 14, fontWeight: 600 }}>-{format(discountAmount)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#888', fontSize: 14 }}>Shipping</span>
               <span style={{ color: shipping === 0 ? 'var(--bb-accent)' : 'var(--bb-fg)', fontSize: 14, fontWeight: 600 }}>
-                {shipping === 0 ? 'FREE' : formatPrice(shipping)}
+                {shipping === 0 ? 'FREE' : format(shipping)}
               </span>
             </div>
             {shipping > 0 && (
-              <p style={{ color: '#555', fontSize: 12 }}>Add {formatPrice(50000 - cartTotal)} more for free shipping</p>
+              <p style={{ color: '#555', fontSize: 12 }}>Add {format(freeShippingThreshold - cartTotal)} more for free shipping</p>
             )}
           </div>
 
@@ -154,32 +187,35 @@ export default function CartPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28 }}>
             <span style={{ color: 'var(--bb-fg)', fontSize: 16, fontWeight: 800, letterSpacing: '0.05em' }}>TOTAL</span>
-            <span style={{ color: 'var(--bb-fg)', fontSize: 20, fontWeight: 900 }}>{formatPrice(total)}</span>
+            <span style={{ color: 'var(--bb-fg)', fontSize: 20, fontWeight: 900 }}>{format(total)}</span>
           </div>
 
-          {/* Promo code */}
+          {/* Promo code — checks Firestore promoCodes collection */}
           {!promoApplied && (
-            <div style={{ display: 'flex', gap: 0, marginBottom: 20 }}>
-              <input
-                type="text"
-                placeholder="Promo code"
-                value={promoCode}
-                onChange={e => setPromoCode(e.target.value)}
-                className="bb-input"
-                style={{ flex: 1, fontSize: 13 }}
-              />
-              <button className="btn-primary" onClick={applyPromo} style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                Apply
-              </button>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 0 }}>
+                <input
+                  type="text"
+                  placeholder="Promo code"
+                  value={promoCode}
+                  onChange={e => { setPromoCode(e.target.value); setPromoError(''); }}
+                  className="bb-input"
+                  style={{ flex: 1, fontSize: 13 }}
+                />
+                <button className="btn-primary" onClick={applyPromo} style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                  Apply
+                </button>
+              </div>
+              {promoError && <p style={{ color: '#ff4444', fontSize: 12, marginTop: 6 }}>{promoError}</p>}
             </div>
           )}
 
-          <button className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: 14 }}>
+          <button className="btn-primary" style={{ width: '100%', padding: '18px', fontSize: 14 }} onClick={() => router.push('/checkout')}>
             Checkout →
           </button>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 20 }}>
-            {['VISA', 'MC', 'PAYSTACK'].map(p => (
+            {['VISA', 'MC', 'PAYSTACK', 'STRIPE'].map(p => (
               <span key={p} style={{ color: '#333', fontSize: 10, letterSpacing: '0.08em', border: '1px solid #1a1a1a', padding: '3px 8px' }}>{p}</span>
             ))}
           </div>

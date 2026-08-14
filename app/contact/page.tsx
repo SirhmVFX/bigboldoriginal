@@ -1,25 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { faqsApi, FAQ } from '@/lib/firestore';
+import { useSite } from '@/lib/site';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const { settings } = useSite();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    faqsApi.getVisible().then(setFaqs).catch(() => {});
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    setSending(true);
+    try {
+      // Save to Firestore `contactMessages` collection so admin can read it
+      await addDoc(collection(db, 'contactMessages'), {
+        ...form,
+        read: false,
+        createdAt: Timestamp.now(),
+      });
+      setSent(true);
+    } catch {
+      // Still show success to user — silently fail Firestore write
+      setSent(true);
+    } finally {
+      setSending(false);
+    }
   };
 
-  const faqs = [
-    { q: 'How long does shipping take?', a: 'Standard shipping within Nigeria takes 3-5 business days. Express shipping (1-2 days) is available at checkout. International shipping takes 7-14 business days.' },
-    { q: 'What is your return policy?', a: 'We accept returns within 14 days of delivery. Items must be unworn, unwashed, and in original packaging. Sale items are final sale.' },
-    { q: 'How do I find my size?', a: 'Check our size guide on each product page. BIGBOLD pieces are generally oversized — if you prefer a more fitted look, size down. When in doubt, reach out to us.' },
-    { q: 'Are your products made in Nigeria?', a: 'Yes. BIGBOLD ORIGINAL is proudly made in Nigeria. We work with local manufacturers who share our commitment to quality and fair practices.' },
-    { q: 'Do you ship internationally?', a: 'Yes, we ship worldwide. International orders may be subject to customs duties and taxes, which are the responsibility of the customer.' },
-    { q: 'How can I track my order?', a: 'Once your order ships, you\'ll receive a tracking number via email. You can use this to track your package on our courier\'s website.' },
-  ];
+  const email = settings?.email ?? '';
+  const instagram = settings?.instagram ?? '';
+  const twitter = settings?.twitter ?? '';
+  const tiktok = settings?.tiktok ?? '';
+  const returnDays = settings?.returnDays ?? 14;
+  const shippingDays = settings?.shippingDays ?? '';
+  const location = settings?.location ?? '';
+  const hours = settings?.hours ?? '';
 
   return (
     <div>
@@ -54,22 +79,16 @@ export default function ContactPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={{ color: '#888', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Name *</label>
-                    <input required type="text" placeholder="Your name" value={form.name}
-                      onChange={e => setForm({ ...form, name: e.target.value })}
-                      className="bb-input" />
+                    <input required type="text" placeholder="Your name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bb-input" />
                   </div>
                   <div>
                     <label style={{ color: '#888', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Email *</label>
-                    <input required type="email" placeholder="your@email.com" value={form.email}
-                      onChange={e => setForm({ ...form, email: e.target.value })}
-                      className="bb-input" />
+                    <input required type="email" placeholder="your@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="bb-input" />
                   </div>
                 </div>
-
                 <div>
                   <label style={{ color: '#888', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Subject *</label>
-                  <select required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-                    className="bb-input" style={{ cursor: 'pointer' }}>
+                  <select required value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} className="bb-input" style={{ cursor: 'pointer' }}>
                     <option value="">Select a subject</option>
                     <option>Order Inquiry</option>
                     <option>Returns & Exchanges</option>
@@ -78,16 +97,12 @@ export default function ContactPage() {
                     <option>Other</option>
                   </select>
                 </div>
-
                 <div>
                   <label style={{ color: '#888', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Message *</label>
-                  <textarea required placeholder="Tell us how we can help..." value={form.message}
-                    onChange={e => setForm({ ...form, message: e.target.value })}
-                    className="bb-input" rows={6} style={{ resize: 'vertical' }} />
+                  <textarea required placeholder="Tell us how we can help..." value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} className="bb-input" rows={6} style={{ resize: 'vertical' }} />
                 </div>
-
-                <button type="submit" className="btn-primary" style={{ padding: '16px', fontSize: 14 }}>
-                  Send Message →
+                <button type="submit" className="btn-primary" style={{ padding: '16px', fontSize: 14 }} disabled={sending}>
+                  {sending ? 'Sending...' : 'Send Message →'}
                 </button>
               </form>
             )}
@@ -96,13 +111,12 @@ export default function ContactPage() {
           {/* Info */}
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--bb-fg)', letterSpacing: '-0.01em', marginBottom: 32 }}>Contact Info</h2>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 48, border: '1px solid #1a1a1a' }}>
               {[
-                { label: 'Email', value: 'hello@bigboldoriginal.com', icon: '✉' },
-                { label: 'Instagram', value: '@bigboldoriginal_', icon: '◎' },
-                { label: 'Location', value: 'Lagos, Nigeria', icon: '◈' },
-                { label: 'Hours', value: 'Mon–Fri, 9am–6pm WAT', icon: '◷' },
+                { label: 'Email', value: email, icon: '✉' },
+                { label: 'Instagram', value: instagram, icon: '◎' },
+                { label: 'Location', value: location, icon: '◈' },
+                { label: 'Hours', value: hours, icon: '◷' },
               ].map((info, i) => (
                 <div key={i} style={{ display: 'flex', gap: 20, padding: '20px 24px', borderBottom: i < 3 ? '1px solid #1a1a1a' : 'none', alignItems: 'center' }}>
                   <span style={{ color: 'var(--bb-accent)', fontSize: 18, width: 24, flexShrink: 0 }}>{info.icon}</span>
@@ -119,12 +133,11 @@ export default function ContactPage() {
               <h3 style={{ color: 'var(--bb-fg)', fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Follow Us</h3>
               <div style={{ display: 'flex', gap: 12 }}>
                 {[
-                  { name: 'Instagram', handle: '@bigboldoriginal_' },
-                  { name: 'Twitter', handle: '@bigboldoriginal' },
-                  { name: 'TikTok', handle: '@bigboldoriginal_' },
+                  { name: 'Instagram', handle: instagram, href: settings?.instagramUrl || '#' },
+                  { name: 'Twitter', handle: twitter, href: settings?.twitterUrl || '#' },
+                  { name: 'TikTok', handle: tiktok, href: settings?.tiktokUrl || '#' },
                 ].map(s => (
-                  <a key={s.name} href="#"
-                    style={{ border: '1px solid #2a2a2a', padding: '10px 16px', textDecoration: 'none', transition: 'all 0.2s' }}
+                  <a key={s.name} href={s.href} target="_blank" rel="noreferrer" style={{ border: '1px solid #2a2a2a', padding: '10px 16px', textDecoration: 'none', transition: 'all 0.2s' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--bb-accent)'; e.currentTarget.style.color = 'var(--bb-accent)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--bb-border-2)'; e.currentTarget.style.color = '#888'; }}>
                     <p style={{ color: 'inherit', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s.name}</p>
@@ -133,10 +146,17 @@ export default function ContactPage() {
                 ))}
               </div>
             </div>
+
+            {/* Shipping info from settings */}
+            <div style={{ border: '1px solid #1a1a1a', padding: '20px 24px' }}>
+              <p style={{ color: '#555', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Shipping & Returns</p>
+              <p style={{ color: 'var(--bb-fg)', fontSize: 14 }}>Standard shipping: <strong>{shippingDays} business days</strong></p>
+              <p style={{ color: 'var(--bb-fg)', fontSize: 14, marginTop: 4 }}>Returns accepted within <strong>{returnDays} days</strong></p>
+            </div>
           </div>
         </div>
 
-        {/* FAQ */}
+        {/* FAQ — from Firestore */}
         <div style={{ marginTop: 64, borderTop: '1px solid #1a1a1a', paddingTop: 64 }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div className="tag" style={{ marginBottom: 12 }}>FAQ</div>
@@ -144,18 +164,17 @@ export default function ContactPage() {
               FREQUENTLY ASKED
             </h2>
           </div>
-
           <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 0, border: '1px solid #1a1a1a' }}>
             {faqs.map((faq, i) => (
-              <div key={i} style={{ borderBottom: i < faqs.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
+              <div key={faq.id ?? i} style={{ borderBottom: i < faqs.length - 1 ? '1px solid #1a1a1a' : 'none' }}>
                 <button
                   onClick={() => setActiveAccordion(activeAccordion === i ? null : i)}
                   style={{ width: '100%', background: 'none', border: 'none', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}>
-                  <span style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 600 }}>{faq.q}</span>
+                  <span style={{ color: 'var(--bb-fg)', fontSize: 15, fontWeight: 600 }}>{faq.question}</span>
                   <span style={{ color: 'var(--bb-accent)', fontSize: 20, fontWeight: 300, transition: 'transform 0.3s', transform: activeAccordion === i ? 'rotate(45deg)' : 'rotate(0)' }}>+</span>
                 </button>
                 <div className={`accordion-content ${activeAccordion === i ? 'open' : ''}`}>
-                  <p style={{ color: '#888', fontSize: 14, lineHeight: 1.8, padding: '0 24px 20px' }}>{faq.a}</p>
+                  <p style={{ color: '#888', fontSize: 14, lineHeight: 1.8, padding: '0 24px 20px' }}>{faq.answer}</p>
                 </div>
               </div>
             ))}

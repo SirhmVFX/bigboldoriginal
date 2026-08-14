@@ -1,34 +1,102 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getProductById, getRelatedProducts, formatPrice } from '@/lib/products';
+import { productsApi, FirestoreProduct } from '@/lib/firestore';
 import { useStore } from '@/lib/store';
+import { Product } from '@/lib/store';
 import ProductCard from '@/components/ProductCard';
+import { useCurrency } from '@/lib/currency';
+import { useSite } from '@/lib/site';
+import { useRouter } from 'next/navigation';
+
+function toProduct(p: FirestoreProduct): Product {
+  return {
+    id: p.id ?? '',
+    name: p.name,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    category: p.category,
+    subcategory: p.subcategory,
+    images: p.images,
+    sizes: p.sizes,
+    colors: p.colors,
+    description: p.description,
+    details: p.details,
+    rating: p.rating,
+    reviews: p.reviews,
+    inStock: p.inStock,
+    isNew: p.isNew,
+    isBestSeller: p.isBestSeller,
+    tags: p.tags,
+  };
+}
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const product = getProductById(id);
-  if (!product) notFound();
-
-  const related = getRelatedProducts(product);
   const { state, dispatch, showToast } = useStore();
-  const isFav = state.favorites.includes(product.id);
+  const { format } = useCurrency();
+  const { settings } = useSite();
+  const router = useRouter();
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState(product.colors[0]);
+  const [selectedColor, setSelectedColor] = useState('');
   const [qty, setQty] = useState(1);
   const [activeImg, setActiveImg] = useState(0);
   const [activeTab, setActiveTab] = useState<'description' | 'details' | 'reviews'>('description');
   const [sizeError, setSizeError] = useState(false);
+
+  useEffect(() => {
+    productsApi.getById(id)
+      .then(p => {
+        if (p) {
+          const prod = toProduct(p);
+          setProduct(prod);
+          setSelectedColor(prod.colors[0] ?? '');
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+    productsApi.getAll()
+      .then(all => setAllProducts(all.map(toProduct)))
+      .catch(() => {});
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--bb-muted)' }}>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    notFound();
+  }
+
+  const isFav = state.favorites.includes(product.id);
+
+  const related = allProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4);
 
   const addToCart = () => {
     if (!selectedSize) { setSizeError(true); return; }
     setSizeError(false);
     dispatch({ type: 'ADD_TO_CART', item: { product, size: selectedSize, color: selectedColor, quantity: qty } });
     showToast(`${product.name} added to cart`);
+  };
+
+  const buyNow = () => {
+    if (!selectedSize) { setSizeError(true); return; }
+    dispatch({ type: 'ADD_TO_CART', item: { product, size: selectedSize, color: selectedColor, quantity: qty } });
+    router.push('/checkout');
   };
 
   const toggleFav = () => {
@@ -54,10 +122,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
           {/* Images */}
           <div>
-            {/* Main image */}
             <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden', background: 'var(--bb-border)', marginBottom: 8 }}>
               <Image
-                src={product.images[activeImg]}
+                src={product.images[activeImg] || '/images/placeholder.png'}
                 alt={product.name}
                 fill
                 style={{ objectFit: 'cover', transition: 'opacity 0.3s' }}
@@ -67,7 +134,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <div style={{ position: 'absolute', top: 16, left: 16, background: 'var(--bb-accent)', color: 'var(--bb-bg)', fontSize: 11, fontWeight: 800, padding: '4px 10px', letterSpacing: '0.1em' }}>NEW</div>
               )}
             </div>
-            {/* Thumbnails */}
             {product.images.length > 1 && (
               <div style={{ display: 'flex', gap: 8 }}>
                 {product.images.map((img, i) => (
@@ -83,118 +149,101 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {/* Product info */}
           <div style={{ position: 'sticky', top: 80 }}>
             <div style={{ marginBottom: 8 }}>
-              <span style={{ color: '#555', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{product.category} / {product.subcategory}</span>
+              <span style={{ color: '#555', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{product.category}{product.subcategory ? ` / ${product.subcategory}` : ''}</span>
             </div>
-
             <h1 style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', marginBottom: 16, lineHeight: 1.1 }}>
               {product.name}
             </h1>
-
-            {/* Rating */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
               <div style={{ display: 'flex', gap: 3 }}>
-                {[1,2,3,4,5].map(s => (
+                {[1, 2, 3, 4, 5].map(s => (
                   <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill={s <= Math.round(product.rating) ? 'var(--bb-accent)' : 'var(--bb-border-2)'}>
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
                 ))}
               </div>
               <span style={{ color: '#888', fontSize: 13 }}>{product.rating} ({product.reviews} reviews)</span>
             </div>
-
-            {/* Price */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-              <span style={{ fontSize: 32, fontWeight: 900, color: 'var(--bb-fg)' }}>{formatPrice(product.price)}</span>
+              <span style={{ fontSize: 32, fontWeight: 900, color: 'var(--bb-fg)' }}>{format(product.price)}</span>
               {product.originalPrice && (
                 <>
-                  <span style={{ fontSize: 20, color: '#555', textDecoration: 'line-through' }}>{formatPrice(product.originalPrice)}</span>
+                  <span style={{ fontSize: 20, color: '#555', textDecoration: 'line-through' }}>{format(product.originalPrice)}</span>
                   <span style={{ background: '#ff4444', color: '#fff', fontSize: 11, fontWeight: 800, padding: '3px 8px' }}>
                     -{Math.round((1 - product.price / product.originalPrice) * 100)}%
                   </span>
                 </>
               )}
             </div>
-
             <div style={{ width: '100%', height: 1, background: 'var(--bb-border)', marginBottom: 28 }} />
 
             {/* Color */}
-            <div style={{ marginBottom: 24 }}>
-              <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
-                Color: <span style={{ color: 'var(--bb-fg)', fontWeight: 700 }}>{selectedColor}</span>
-              </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {product.colors.map(c => (
-                  <button key={c} onClick={() => setSelectedColor(c)}
-                    style={{
-                      width: 32, height: 32,
-                      background: c === 'Black' ? 'var(--bb-bg)' : c === 'White' ? '#ffffff' : c === 'Cream' ? '#e8e4d9' : c === 'Olive' ? '#4a5240' : c === 'Charcoal' ? 'var(--bb-border-2)' : '#888',
-                      border: `2px solid ${selectedColor === c ? 'var(--bb-accent)' : 'var(--bb-border-2)'}`,
-                      cursor: 'pointer',
-                      transition: 'border-color 0.2s',
-                    }}
-                    title={c}
-                  />
-                ))}
+            {product.colors.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
+                  Color: <span style={{ color: 'var(--bb-fg)', fontWeight: 700 }}>{selectedColor}</span>
+                </p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {product.colors.map(c => (
+                    <button key={c} onClick={() => setSelectedColor(c)}
+                      style={{
+                        width: 32, height: 32,
+                        background: c === 'Black' ? '#0a0a0a' : c === 'White' ? '#ffffff' : c === 'Cream' ? '#e8e4d9' : c === 'Olive' ? '#4a5240' : c === 'Charcoal' ? '#2a2a2a' : '#888',
+                        border: `2px solid ${selectedColor === c ? 'var(--bb-accent)' : 'var(--bb-border-2)'}`,
+                        cursor: 'pointer', transition: 'border-color 0.2s',
+                      }}
+                      title={c}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Size */}
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                  Size {selectedSize && <span style={{ color: 'var(--bb-fg)', fontWeight: 700 }}>: {selectedSize}</span>}
-                </p>
-                <button style={{ background: 'none', border: 'none', color: 'var(--bb-accent)', fontSize: 12, cursor: 'pointer', letterSpacing: '0.05em', textDecoration: 'underline' }}>
-                  Size Guide
-                </button>
+            {product.sizes.length > 0 && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Size {selectedSize && <span style={{ color: 'var(--bb-fg)', fontWeight: 700 }}>: {selectedSize}</span>}
+                  </p>
+                  <button type="button" onClick={() => setShowSizeGuide(true)} style={{ background: 'none', border: 'none', color: 'var(--bb-accent)', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>Size Guide</button>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {product.sizes.map(s => (
+                    <button key={s} onClick={() => { setSelectedSize(s); setSizeError(false); }}
+                      className={`size-btn ${selectedSize === s ? 'active' : ''}`}>{s}</button>
+                  ))}
+                </div>
+                {sizeError && <p style={{ color: '#ff4444', fontSize: 12, marginTop: 8 }}>Please select a size</p>}
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {product.sizes.map(s => (
-                  <button key={s} onClick={() => { setSelectedSize(s); setSizeError(false); }}
-                    className={`size-btn ${selectedSize === s ? 'active' : ''}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {sizeError && (
-                <p style={{ color: '#ff4444', fontSize: 12, marginTop: 8 }}>Please select a size</p>
-              )}
-            </div>
+            )}
 
             {/* Quantity */}
             <div style={{ marginBottom: 28 }}>
               <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Quantity</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <button className="qty-btn" onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-                <div style={{ width: 56, height: 36, border: '1px solid #2a2a2a', borderLeft: 'none', borderRight: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bb-fg)', fontSize: 15, fontWeight: 700 }}>
-                  {qty}
-                </div>
+                <div style={{ width: 56, height: 36, border: '1px solid #2a2a2a', borderLeft: 'none', borderRight: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--bb-fg)', fontSize: 15, fontWeight: 700 }}>{qty}</div>
                 <button className="qty-btn" onClick={() => setQty(qty + 1)}>+</button>
               </div>
             </div>
 
             {/* Actions */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-              <button className="btn-primary" onClick={addToCart} style={{ flex: 1, padding: '16px' }}>
-                Add to Cart
-              </button>
-              <button onClick={toggleFav}
-                style={{ width: 52, height: 52, border: `1px solid ${isFav ? 'var(--bb-accent)' : 'var(--bb-border-2)'}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.2s' }}>
+              <button className="btn-primary" onClick={addToCart} style={{ flex: 1, padding: '16px' }}>Add to Cart</button>
+              <button onClick={toggleFav} style={{ width: 52, height: 52, border: `1px solid ${isFav ? 'var(--bb-accent)' : 'var(--bb-border-2)'}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.2s' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill={isFav ? 'var(--bb-accent)' : 'none'} stroke={isFav ? 'var(--bb-accent)' : '#888'} strokeWidth="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
               </button>
             </div>
-
-            <button className="btn-outline" style={{ width: '100%', padding: '16px' }}>
-              Buy Now
-            </button>
+            <button className="btn-outline" style={{ width: '100%', padding: '16px' }} onClick={buyNow}>Buy Now</button>
 
             {/* Trust badges */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 28, paddingTop: 28, borderTop: '1px solid #1a1a1a' }}>
               {[
-                { icon: '🚚', label: 'Free Shipping', sub: 'Over ₦50k' },
-                { icon: '↩', label: 'Easy Returns', sub: '14 days' },
+                { icon: '🚚', label: 'Free Shipping', sub: settings?.freeShippingThreshold ? `Over ${format(settings.freeShippingThreshold)}` : '' },
+                { icon: '↩', label: 'Easy Returns', sub: `${settings?.returnDays ?? 14} days` },
                 { icon: '✓', label: 'Authentic', sub: 'Guaranteed' },
               ].map(b => (
                 <div key={b.label} style={{ textAlign: 'center' }}>
@@ -212,25 +261,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
             {(['description', 'details', 'reviews'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{
-                  padding: '16px 32px',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: `2px solid ${activeTab === tab ? 'var(--bb-accent)' : 'transparent'}`,
-                  color: activeTab === tab ? 'var(--bb-fg)' : '#555',
-                  fontSize: 12,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  marginBottom: -1,
-                }}>
+                style={{ padding: '16px 32px', background: 'none', border: 'none', borderBottom: `2px solid ${activeTab === tab ? 'var(--bb-accent)' : 'transparent'}`, color: activeTab === tab ? 'var(--bb-fg)' : '#555', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', marginBottom: -1 }}>
                 {tab}
               </button>
             ))}
           </div>
-
           <div style={{ padding: '32px 0' }}>
             {activeTab === 'description' && (
               <p style={{ color: '#aaa', fontSize: 15, lineHeight: 1.9, maxWidth: 640 }}>{product.description}</p>
@@ -239,8 +274,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {product.details.map((d, i) => (
                   <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#aaa', fontSize: 14 }}>
-                    <span style={{ color: 'var(--bb-accent)', fontWeight: 700 }}>—</span>
-                    {d}
+                    <span style={{ color: 'var(--bb-accent)', fontWeight: 700 }}>—</span>{d}
                   </li>
                 ))}
               </ul>
@@ -251,9 +285,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 56, fontWeight: 900, color: 'var(--bb-fg)', lineHeight: 1 }}>{product.rating}</div>
                     <div style={{ display: 'flex', gap: 3, justifyContent: 'center', margin: '8px 0' }}>
-                      {[1,2,3,4,5].map(s => (
+                      {[1, 2, 3, 4, 5].map(s => (
                         <svg key={s} width="16" height="16" viewBox="0 0 24 24" fill={s <= Math.round(product.rating) ? 'var(--bb-accent)' : 'var(--bb-border-2)'}>
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
                       ))}
                     </div>
@@ -269,9 +303,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         {/* Related products */}
         {related.length > 0 && (
           <div style={{ marginTop: 64 }}>
-            <h2 style={{ fontSize: 'clamp(20px, 3vw, 32px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', marginBottom: 32 }}>
-              YOU MAY ALSO LIKE
-            </h2>
+            <h2 style={{ fontSize: 'clamp(20px, 3vw, 32px)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--bb-fg)', marginBottom: 32 }}>YOU MAY ALSO LIKE</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1, background: 'var(--bb-border)' }}>
               {related.map((p, i) => (
                 <div key={p.id} style={{ background: 'var(--bb-bg)' }}>
@@ -283,11 +315,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         )}
       </div>
 
-      <style>{`
-        @media (max-width: 768px) {
-          .product-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
+      {showSizeGuide && (
+        <div onClick={() => setShowSizeGuide(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bb-bg)', border: '1px solid var(--bb-border)', padding: 32, maxWidth: 520, width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
+            <h3 style={{ fontSize: 20, fontWeight: 900, marginBottom: 16 }}>SIZE GUIDE</h3>
+            <p style={{ color: 'var(--bb-muted)', whiteSpace: 'pre-line', lineHeight: 1.8 }}>{settings?.sizeGuide || 'Size guide will appear here after seeding settings.'}</p>
+            <button className="btn-primary" style={{ marginTop: 24 }} onClick={() => setShowSizeGuide(false)}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
